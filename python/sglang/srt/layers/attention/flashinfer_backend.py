@@ -558,6 +558,13 @@ class FlashInferAttnBackend(AttentionBackend):
                 for qo_indptr in self.qo_indptr
             ]
 
+        self.indices_updater_decode.kv_indptr = self.kv_indptr
+        self.indices_updater_decode.kv_last_page_len = self.kv_last_page_len
+        if not self.skip_prefill:
+            self.indices_updater_prefill.kv_indptr = self.kv_indptr
+            self.indices_updater_prefill.kv_last_page_len = self.kv_last_page_len
+            self.indices_updater_prefill.qo_indptr = self.qo_indptr
+
         if kv_indices_buf is None:
             cuda_graph_kv_indices = torch.zeros(
                 (max_num_tokens * self.max_context_len,),
