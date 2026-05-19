@@ -20,6 +20,10 @@ TEST_ROOT = BENCHMARK_DIR.parent
 REPO_ROOT = TEST_ROOT.parent
 CONFIG_DIR = BENCHMARK_DIR / "configs"
 PROFILE_DIR = BENCHMARK_DIR / "profiles"
+SERVER_PYTHON_BIN = os.environ.get("SERVER_PYTHON_BIN", os.environ.get("PYTHON_BIN", "python"))
+ROUTER_PYTHON_BIN = os.environ.get("ROUTER_PYTHON_BIN", os.environ.get("PYTHON_BIN", "python"))
+PROXY_PYTHON_BIN = os.environ.get("PROXY_PYTHON_BIN", "python3")
+CLIENT_PYTHON_BIN = os.environ.get("CLIENT_PYTHON_BIN", "python3")
 
 
 def load_json(path: Path) -> dict[str, Any]:
@@ -117,7 +121,7 @@ def server_command(case: dict[str, Any]) -> tuple[list[str], dict[str, str]]:
             )
 
     cmd = [
-        sys.executable,
+        SERVER_PYTHON_BIN,
         "-m",
         "sglang.launch_server",
         "--model-path",
@@ -170,7 +174,7 @@ def router_command(case: dict[str, Any]) -> list[str]:
     server_url = f"http://127.0.0.1:{server['port']}"
 
     cmd = [
-        sys.executable,
+        ROUTER_PYTHON_BIN,
         "-m",
         "sglang_router.launch_router",
         "--worker-urls",
@@ -197,7 +201,7 @@ def proxy_command(case: dict[str, Any], run_dir: Path) -> list[str]:
     proxy = case["proxy"]
 
     cmd = [
-        sys.executable,
+        PROXY_PYTHON_BIN,
         str(TEST_ROOT / "proxy" / "main.py"),
         "--host",
         proxy["host"],
@@ -260,7 +264,7 @@ def client_base_url(case: dict[str, Any]) -> str:
 def workload_command(case: dict[str, Any], run_dir: Path) -> list[str]:
     client = case["client"]
     cmd = [
-        sys.executable,
+        CLIENT_PYTHON_BIN,
         str(TEST_ROOT / "bench" / "run_workload.py"),
         "--data",
         str(repo_path(client["data_path"])),
@@ -413,7 +417,7 @@ def write_summary(run_dir: Path, case: dict[str, Any]) -> None:
         f.write("\n")
 
 
-def write_commands(run_dir: Path, commands: dict[str, list[str] | None]) -> None:
+def write_commands(run_dir: Path, commands: dict[str, Any]) -> None:
     with (run_dir / "commands.json").open("w") as f:
         json.dump(commands, f, indent=2, ensure_ascii=False)
         f.write("\n")
@@ -472,6 +476,11 @@ def run_case(case_id: str, output_root: Path) -> None:
         run_dir,
         {
             "server": server_cmd,
+            "server_env": {
+                "SGLANG_ENABLE_SPEC_V2": server_env.get("SGLANG_ENABLE_SPEC_V2"),
+                "SPECULATIVE_ALGO": server_env.get("SPECULATIVE_ALGO"),
+                "PYTHONPATH": server_env.get("PYTHONPATH"),
+            },
             "router": router_cmd,
             "proxy": proxy_cmd,
             "client": client_cmd,
