@@ -5,6 +5,7 @@ import argparse
 import json
 import os
 import signal
+import socket
 import subprocess
 import sys
 import time
@@ -64,7 +65,19 @@ def load_case(case_id: str) -> dict[str, Any]:
     merged["id"] = case["id"]
     merged["description"] = case.get("description", "")
     merged["profile"] = profile_name
-    return merged
+    return normalize_case(merged)
+
+
+def case_order(case: dict[str, Any]) -> int:
+    return int(case["id"].split("_", 1)[0])
+
+
+def normalize_case(case: dict[str, Any]) -> dict[str, Any]:
+    router = case.get("router", {})
+    if router.get("enabled"):
+        router.setdefault("prometheus_host", router.get("host", "0.0.0.0"))
+        router.setdefault("prometheus_port", 29000 + case_order(case))
+    return case
 
 
 def repo_path(value: str) -> Path:
@@ -168,6 +181,10 @@ def router_command(case: dict[str, Any]) -> list[str]:
         router["host"],
         "--port",
         str(router["port"]),
+        "--prometheus-host",
+        router["prometheus_host"],
+        "--prometheus-port",
+        str(router["prometheus_port"]),
     ]
     if router.get("dp_aware"):
         cmd.append("--dp-aware")
@@ -205,6 +222,31 @@ def proxy_command(case: dict[str, Any], run_dir: Path) -> list[str]:
     append_pair(cmd, "--dynamic-max-inflight-requests", proxy.get("dynamic_max_inflight_requests"))
     append_pair(cmd, "--dynamic-control-interval", proxy.get("dynamic_control_interval"))
     return cmd
+
+
+def is_port_open(port: int, host: str = "127.0.0.1") -> bool:
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+        sock.settimeout(1)
+        return sock.connect_ex((host, port)) == 0
+
+
+def ensure_ports_free(case: dict[str, Any]) -> None:
+    checks = [("server", case["server"]["port"])]
+    router = case.get("router", {})
+    if router.get("enabled"):
+        checks.append(("router", router["port"]))
+        checks.append(("router prometheus", router["prometheus_port"]))
+    proxy = case.get("proxy", {})
+    if proxy.get("enabled"):
+        checks.append(("proxy", proxy["port"]))
+
+    busy = [(name, port) for name, port in checks if is_port_open(int(port))]
+    if busy:
+        detail = "\n".join(f"  {name}: 127.0.0.1:{port}" for name, port in busy)
+        raise RuntimeError(
+            "Required port is already in use. Stop the old process or choose another port.\n"
+            f"{detail}"
+        )
 
 
 def client_base_url(case: dict[str, Any]) -> str:
@@ -298,22 +340,36 @@ def tail(path: Path, lines: int = 80) -> str:
     return "\n".join(data[-lines:])
 
 
-def http_ready(base_url: str) -> bool:
-    base = base_url.rstrip("/")
-    for suffix in ("/health", "/v1/models"):
-        try:
-            with urllib.request.urlopen(base + suffix, timeout=2) as response:
-                if response.status < 500:
-                    return True
-        except urllib.error.HTTPError as exc:
-            if exc.code < 500:
-                return True
-        except Exception:
-            pass
-    return False
+def http_status_200(url: str) -> bool:
+    try:
+        with urllib.request.urlopen(url, timeout=2) as response:
+            return response.status == 200
+    except Exception:
+        return False
 
 
-def wait_ready(process: ManagedProcess, base_url: str, timeout_s: int, poll_s: int) -> None:
+def server_ready(base_url: str) -> bool:
+    try:
+        with urllib.request.urlopen(f"{base_url.rstrip('/')}/v1/models", timeout=5) as response:
+            if response.status != 200:
+                return False
+            json.load(response)
+            return True
+    except Exception:
+        return False
+
+
+def service_ready(base_url: str) -> bool:
+    return http_status_200(f"{base_url.rstrip('/')}/health")
+
+
+def wait_ready(
+    process: ManagedProcess,
+    base_url: str,
+    timeout_s: int,
+    poll_s: int,
+    ready_check,
+) -> None:
     deadline = time.time() + timeout_s
     print(f"[bench] waiting for {process.name}: {base_url}", flush=True)
     while time.time() < deadline:
@@ -322,7 +378,7 @@ def wait_ready(process: ManagedProcess, base_url: str, timeout_s: int, poll_s: i
                 f"{process.name} exited before it was ready.\n"
                 f"Last log lines:\n{tail(process.log_path)}"
             )
-        if http_ready(base_url):
+        if ready_check(base_url):
             print(f"[bench] {process.name} is ready", flush=True)
             return
         time.sleep(poll_s)
@@ -395,6 +451,8 @@ def run_case(case_id: str, batch_id: str, output_root: Path) -> None:
     print(f"[bench] {case.get('description', '')}", flush=True)
     print(f"[bench] output: {run_dir}", flush=True)
 
+    ensure_ports_free(case)
+
     server_cmd, server_env = server_command(case)
     router_cmd = router_command(case) if case.get("router", {}).get("enabled") else None
     proxy_cmd = proxy_command(case, run_dir) if case.get("proxy", {}).get("enabled") else None
@@ -421,6 +479,7 @@ def run_case(case_id: str, batch_id: str, output_root: Path) -> None:
             f"http://127.0.0.1:{case['server']['port']}",
             int(os.environ.get("SERVER_READY_TIMEOUT", "1800")),
             int(os.environ.get("READY_POLL_INTERVAL", "5")),
+            server_ready,
         )
 
         if case.get("router", {}).get("enabled"):
@@ -434,6 +493,7 @@ def run_case(case_id: str, batch_id: str, output_root: Path) -> None:
                 f"http://127.0.0.1:{case['router']['port']}",
                 int(os.environ.get("ROUTER_READY_TIMEOUT", "300")),
                 int(os.environ.get("READY_POLL_INTERVAL", "5")),
+                service_ready,
             )
 
         if case.get("proxy", {}).get("enabled"):
@@ -447,6 +507,7 @@ def run_case(case_id: str, batch_id: str, output_root: Path) -> None:
                 f"http://127.0.0.1:{case['proxy']['port']}",
                 int(os.environ.get("PROXY_READY_TIMEOUT", "120")),
                 int(os.environ.get("READY_POLL_INTERVAL", "5")),
+                service_ready,
             )
 
         client_log = run_dir / "client_console.log"
