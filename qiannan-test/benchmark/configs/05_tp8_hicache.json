@@ -1,0 +1,12 @@
+{
+  "id": "05_tp8_hicache",
+  "description": "Pure TP8 with the same Stage-2 HiCache settings.",
+  "profile": "stage2_hicache",
+  "server": {
+    "dp_size": null,
+    "enable_dp_attention": false
+  },
+  "router": {
+    "enabled": false
+  }
+}

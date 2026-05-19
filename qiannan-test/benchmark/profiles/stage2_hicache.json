@@ -1,0 +1,51 @@
+{
+  "name": "stage2_hicache",
+  "server": {
+    "model": {
+      "kind": "base",
+      "env": "MODEL_PATH",
+      "fallback_env": "BASE_MODEL_PATH",
+      "default_path": "/home/Qwen3.5-122B-A10B"
+    },
+    "host": "0.0.0.0",
+    "port": 8000,
+    "tp_size": 8,
+    "dp_size": 2,
+    "enable_dp_attention": true,
+    "speculative_algorithm": "NONE",
+    "sglang_enable_spec_v2": "0",
+    "mem_fraction_static": "0.92",
+    "context_length": "262144",
+    "reasoning_parser": "qwen3",
+    "tool_call_parser": "qwen3_coder",
+    "mamba_scheduler_strategy": "extra_buffer",
+    "chunked_prefill_size": "16384",
+    "schedule_policy": "lpm",
+    "schedule_conservativeness": "3.33",
+    "enable_cache_report": true,
+    "enable_metrics": true,
+    "enable_mixed_chunk": true,
+    "hicache": {
+      "enabled": true,
+      "ratio": "2",
+      "io_backend": "kernel",
+      "storage_prefetch_policy": "wait_complete",
+      "write_policy": "write_through"
+    },
+    "kv_cache_dtype": null
+  },
+  "router": {
+    "enabled": true,
+    "host": "0.0.0.0",
+    "port": 30000,
+    "policy": "cache_aware",
+    "dp_aware": true
+  },
+  "proxy": {
+    "enabled": false
+  },
+  "client": {
+    "data_path": "qiannan-test/bench/workload_data.jsonl",
+    "summary_interval": 30
+  }
+}

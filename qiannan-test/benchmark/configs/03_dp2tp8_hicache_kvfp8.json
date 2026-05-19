@@ -1,0 +1,8 @@
+{
+  "id": "03_dp2tp8_hicache_kvfp8",
+  "description": "Case 01 plus FP8 KV cache.",
+  "profile": "stage2_hicache",
+  "server": {
+    "kv_cache_dtype": "fp8_e4m3"
+  }
+}

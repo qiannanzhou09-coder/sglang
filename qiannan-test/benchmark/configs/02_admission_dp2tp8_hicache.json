@@ -1,0 +1,21 @@
+{
+  "id": "02_admission_dp2tp8_hicache",
+  "description": "Case 01 plus dynamic admission control.",
+  "profile": "stage2_hicache",
+  "router": {
+    "port": 30001
+  },
+  "proxy": {
+    "enabled": true,
+    "host": "0.0.0.0",
+    "port": 30000,
+    "policy": "passthrough_router",
+    "max_active_sessions": 64,
+    "session_idle_timeout": 7200,
+    "dynamic_admission": true,
+    "dynamic_min_inflight_requests": 64,
+    "dynamic_initial_inflight_requests": 128,
+    "dynamic_max_inflight_requests": 256,
+    "dynamic_control_interval": 60
+  }
+}

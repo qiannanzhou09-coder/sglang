@@ -1,0 +1,9 @@
+{
+  "id": "06_dp8tp8_hicache",
+  "description": "Case 01 with DP changed from 2 to 8.",
+  "profile": "stage2_hicache",
+  "server": {
+    "dp_size": 8,
+    "enable_dp_attention": true
+  }
+}
