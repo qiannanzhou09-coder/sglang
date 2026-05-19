@@ -1,0 +1,43 @@
+{
+  "stage": "stage1_architecture_selection",
+  "selected_config_id": "E_dpa_tp8_dp2_router_spec_off_max_running_640",
+  "created_at": "2026-05-19",
+  "architecture": {
+    "label": "E",
+    "description": "TP8 + DP2 DPA + cache-aware router",
+    "tp_size": 8,
+    "dp_size": 2,
+    "enable_dp_attention": true,
+    "router": {
+      "enabled": true,
+      "policy": "cache_aware",
+      "dp_aware": true,
+      "port": 30000
+    }
+  },
+  "server_env": {
+    "SPECULATIVE_ALGO": "NONE",
+    "MAX_RUNNING_REQUESTS": "640",
+    "CHUNKED_PREFILL_SIZE": "16384",
+    "SCHEDULE_CONSERVATIVENESS": "3.33",
+    "MEM_FRACTION_STATIC": "0.8",
+    "SCHEDULE_POLICY": "lpm"
+  },
+  "commands": {
+    "server": "SPECULATIVE_ALGO=NONE MAX_RUNNING_REQUESTS=640 bash qiannan-test/scripts/serve_E_dpa_tp8_dp2.sh",
+    "router": "bash qiannan-test/scripts/router_E_dp2_cache_aware.sh",
+    "client_base_url": "http://localhost:30000"
+  },
+  "effective_values": {
+    "chunked_prefill_size": 8192,
+    "schedule_conservativeness": 1.0,
+    "speculative_decoding": "off",
+    "max_running_requests": 640
+  },
+  "notes": [
+    "This is the stage-1 winner baseline for stage-2 OFAT tuning.",
+    "Speculative decoding is disabled because enabling NEXTN without an explicit max-running-requests can reduce the default running size to 48.",
+    "All stage-2 sweeps should keep MAX_RUNNING_REQUESTS=640 unless the sweep explicitly studies that limit.",
+    "For DP2, SGLang divides chunked-prefill-size by 2 and multiplies schedule-conservativeness by 0.3 internally."
+  ]
+}

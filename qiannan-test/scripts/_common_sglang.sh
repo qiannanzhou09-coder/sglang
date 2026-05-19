@@ -20,6 +20,7 @@ SPECULATIVE_NUM_STEPS="${SPECULATIVE_NUM_STEPS:-3}"
 SPECULATIVE_EAGLE_TOPK="${SPECULATIVE_EAGLE_TOPK:-1}"
 SPECULATIVE_NUM_DRAFT_TOKENS="${SPECULATIVE_NUM_DRAFT_TOKENS:-4}"
 MAMBA_SCHEDULER_STRATEGY="${MAMBA_SCHEDULER_STRATEGY:-extra_buffer}"
+MIXED_CHUNK="${MIXED_CHUNK:-1}"
 
 COMMON_SGLANG_ARGS=(
   --model-path "${MODEL_PATH}"
@@ -31,18 +32,25 @@ COMMON_SGLANG_ARGS=(
   --tool-call-parser qwen3_coder
   --mamba-scheduler-strategy "${MAMBA_SCHEDULER_STRATEGY}"
   --chunked-prefill-size "${CHUNKED_PREFILL_SIZE}"
-  --enable-mixed-chunk
   --schedule-policy "${SCHEDULE_POLICY}"
   --enable-cache-report
   --enable-metrics
 )
+
+case "${MIXED_CHUNK}" in
+  ""|OFF|off|Off|FALSE|false|False|0|null|NULL|Null)
+    ;;
+  *)
+    COMMON_SGLANG_ARGS+=(--enable-mixed-chunk)
+    ;;
+esac
 
 case "${SPECULATIVE_ALGO}" in
   ""|NONE|none|None|OFF|off|Off|FALSE|false|False|0|null|NULL|Null)
     ;;
   *)
     COMMON_SGLANG_ARGS+=(
-      --speculative-algo "${SPECULATIVE_ALGO}"
+      --speculative-algorithm "${SPECULATIVE_ALGO}"
       --speculative-num-steps "${SPECULATIVE_NUM_STEPS}"
       --speculative-eagle-topk "${SPECULATIVE_EAGLE_TOPK}"
       --speculative-num-draft-tokens "${SPECULATIVE_NUM_DRAFT_TOKENS}"
@@ -57,3 +65,51 @@ fi
 if [[ -n "${MAX_RUNNING_REQUESTS:-}" ]]; then
   COMMON_SGLANG_ARGS+=(--max-running-requests "${MAX_RUNNING_REQUESTS}")
 fi
+
+if [[ -n "${MAX_PREFILL_TOKENS:-}" ]]; then
+  COMMON_SGLANG_ARGS+=(--max-prefill-tokens "${MAX_PREFILL_TOKENS}")
+fi
+
+if [[ -n "${KV_CACHE_DTYPE:-}" && "${KV_CACHE_DTYPE}" != "auto" ]]; then
+  COMMON_SGLANG_ARGS+=(--kv-cache-dtype "${KV_CACHE_DTYPE}")
+fi
+
+case "${ENABLE_DP_LM_HEAD:-0}" in
+  1|true|TRUE|True|on|ON|On|yes|YES|Yes)
+    COMMON_SGLANG_ARGS+=(--enable-dp-lm-head)
+    ;;
+esac
+
+if [[ -n "${ATTENTION_BACKEND:-}" ]]; then
+  COMMON_SGLANG_ARGS+=(--attention-backend "${ATTENTION_BACKEND}")
+fi
+
+if [[ -n "${CUDA_GRAPH_MAX_BS:-}" ]]; then
+  COMMON_SGLANG_ARGS+=(--cuda-graph-max-bs "${CUDA_GRAPH_MAX_BS}")
+fi
+
+if [[ "${ENABLE_TORCH_COMPILE:-0}" == "1" ]]; then
+  COMMON_SGLANG_ARGS+=(--enable-torch-compile)
+fi
+
+if [[ "${DISABLE_RADIX_CACHE:-0}" == "1" ]]; then
+  COMMON_SGLANG_ARGS+=(--disable-radix-cache)
+fi
+
+case "${ENABLE_HICACHE:-0}" in
+  1|true|TRUE|True|on|ON|On|yes|YES|Yes)
+    COMMON_SGLANG_ARGS+=(--enable-hierarchical-cache)
+    if [[ -n "${HICACHE_RATIO:-}" ]]; then
+      COMMON_SGLANG_ARGS+=(--hicache-ratio "${HICACHE_RATIO}")
+    fi
+    if [[ -n "${HICACHE_IO_BACKEND:-}" ]]; then
+      COMMON_SGLANG_ARGS+=(--hicache-io-backend "${HICACHE_IO_BACKEND}")
+    fi
+    if [[ -n "${HICACHE_STORAGE_PREFETCH_POLICY:-}" ]]; then
+      COMMON_SGLANG_ARGS+=(--hicache-storage-prefetch-policy "${HICACHE_STORAGE_PREFETCH_POLICY}")
+    fi
+    if [[ -n "${HICACHE_WRITE_POLICY:-}" ]]; then
+      COMMON_SGLANG_ARGS+=(--hicache-write-policy "${HICACHE_WRITE_POLICY}")
+    fi
+    ;;
+esac

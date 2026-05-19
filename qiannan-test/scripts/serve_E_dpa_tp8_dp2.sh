@@ -11,6 +11,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 CHUNKED_PREFILL_SIZE="${CHUNKED_PREFILL_SIZE:-16384}"
 SCHEDULE_CONSERVATIVENESS="${SCHEDULE_CONSERVATIVENESS:-3.33}"
 export CHUNKED_PREFILL_SIZE SCHEDULE_CONSERVATIVENESS
+EFFECTIVE_CHUNKED_PREFILL_SIZE="$((CHUNKED_PREFILL_SIZE / 2))"
 
 source "${SCRIPT_DIR}/_common_sglang.sh"
 
@@ -18,7 +19,7 @@ echo "[E] Starting DPA server TP=8 DP=2 on :${SGLANG_PORT}"
 echo "    Attention: dp=2, tp=4; MoE/dense TP remains 8."
 echo "    Start router in another shell: bash ${SCRIPT_DIR}/router_E_dp2_cache_aware.sh"
 echo "    Client target for E: http://<host>:${ROUTER_PORT:-30000}"
-echo "    DPA effective chunked-prefill-size: ${CHUNKED_PREFILL_SIZE} / 2 = 8192"
+echo "    DPA effective chunked-prefill-size: ${CHUNKED_PREFILL_SIZE} / 2 = ${EFFECTIVE_CHUNKED_PREFILL_SIZE}"
 
 python -m sglang.launch_server \
   "${COMMON_SGLANG_ARGS[@]}" \
