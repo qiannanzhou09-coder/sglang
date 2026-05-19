@@ -21,6 +21,8 @@ BASE_URL="${BASE_URL:-http://localhost:8000}"
 MODEL="${MODEL:-default}"
 TIMEOUT="${TIMEOUT:-1800}"
 TEMPERATURE="${TEMPERATURE:-0.7}"
+MAX_DURATION="${MAX_DURATION:-}"
+SUMMARY_INTERVAL="${SUMMARY_INTERVAL:-}"
 
 case "${FIXTURE_ARG}" in
   T1|t1)
@@ -60,6 +62,8 @@ base_url: ${BASE_URL}
 model: ${MODEL}
 timeout: ${TIMEOUT}
 temperature: ${TEMPERATURE}
+max_duration: ${MAX_DURATION:-null}
+summary_interval: ${SUMMARY_INTERVAL:-null}
 EOF
 
 echo "[client] run_id: ${RUN_ID}"
@@ -80,6 +84,14 @@ CLIENT_ARGS=(
 
 if [[ -n "${MAX_SESSIONS:-}" ]]; then
   CLIENT_ARGS+=(--max-sessions "${MAX_SESSIONS}")
+fi
+
+if [[ -n "${MAX_DURATION}" ]]; then
+  CLIENT_ARGS+=(--max-duration "${MAX_DURATION}")
+fi
+
+if [[ -n "${SUMMARY_INTERVAL}" ]]; then
+  CLIENT_ARGS+=(--summary-interval "${SUMMARY_INTERVAL}")
 fi
 
 if [[ "${NO_IGNORE_EOS:-0}" == "1" ]]; then

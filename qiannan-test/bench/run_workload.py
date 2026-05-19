@@ -46,6 +46,56 @@ def extract_cached_tokens(usage: dict) -> int:
     return int(usage.get("cached_tokens") or 0)
 
 
+def round_metric_record(m: RoundMetric) -> dict:
+    """Serialize one completed round metric as a JSONL record."""
+    return {
+        "type": "round",
+        "session_id": m.session_id,
+        "round_idx": m.round_idx,
+        "input_tokens": m.input_tokens,
+        "expected_output_tokens": m.expected_output_tokens,
+        "actual_output_tokens": m.actual_output_tokens,
+        "prompt_tokens": m.prompt_tokens,
+        "cached_tokens": m.cached_tokens,
+        "cache_hit_rate": round(m.cached_tokens / m.prompt_tokens, 6)
+        if m.prompt_tokens > 0
+        else 0,
+        "ttft": round(m.ttft, 4),
+        "total_time": round(m.total_time, 4),
+        "session_time": round(m.session_time, 4),
+        "success": m.success,
+        "error": m.error or None,
+    }
+
+
+async def record_round_metric(
+    metric: RoundMetric,
+    metrics: list,
+    progress: dict,
+    output_file=None,
+    output_lock: Optional[asyncio.Lock] = None,
+) -> None:
+    """Append a metric in memory and optionally flush it to JSONL immediately."""
+    metrics.append(metric)
+    if metric.success:
+        progress["rounds"] += 1
+    else:
+        progress["failed"] += 1
+
+    if output_file is None:
+        return
+
+    line = json.dumps(round_metric_record(metric)) + "\n"
+    if output_lock is None:
+        output_file.write(line)
+        output_file.flush()
+        return
+
+    async with output_lock:
+        output_file.write(line)
+        output_file.flush()
+
+
 async def stream_round(
     http: aiohttp.ClientSession,
     url: str,
@@ -116,6 +166,8 @@ async def run_session(
     ignore_eos: bool,
     temperature: float,
     model: str,
+    output_file=None,
+    output_lock: Optional[asyncio.Lock] = None,
     max_retries: int = 3,
     retry_base_delay: float = 2.0,
 ):
@@ -143,20 +195,25 @@ async def run_session(
                 messages.append({"role": "assistant", "content": content})
 
                 session_exec_time += time.monotonic() - round_start
-                metrics.append(RoundMetric(
-                    session_id=sid,
-                    round_idx=ri,
-                    input_tokens=rd["input"],
-                    expected_output_tokens=rd["output"],
-                    actual_output_tokens=actual_out,
-                    prompt_tokens=prompt_tokens,
-                    cached_tokens=cached_tokens,
-                    ttft=ttft,
-                    total_time=total_time,
-                    success=True,
-                    session_time=session_exec_time,
-                ))
-                progress["rounds"] += 1
+                await record_round_metric(
+                    RoundMetric(
+                        session_id=sid,
+                        round_idx=ri,
+                        input_tokens=rd["input"],
+                        expected_output_tokens=rd["output"],
+                        actual_output_tokens=actual_out,
+                        prompt_tokens=prompt_tokens,
+                        cached_tokens=cached_tokens,
+                        ttft=ttft,
+                        total_time=total_time,
+                        success=True,
+                        session_time=session_exec_time,
+                    ),
+                    metrics,
+                    progress,
+                    output_file,
+                    output_lock,
+                )
                 last_error = None
                 break
             except Exception as e:
@@ -169,21 +226,26 @@ async def run_session(
 
         if last_error is not None:
             session_exec_time += time.monotonic() - round_start
-            metrics.append(RoundMetric(
-                session_id=sid,
-                round_idx=ri,
-                input_tokens=rd["input"],
-                expected_output_tokens=rd["output"],
-                actual_output_tokens=0,
-                prompt_tokens=0,
-                cached_tokens=0,
-                ttft=0,
-                total_time=0,
-                success=False,
-                error=str(last_error)[:300],
-                session_time=session_exec_time,
-            ))
-            progress["failed"] += 1
+            await record_round_metric(
+                RoundMetric(
+                    session_id=sid,
+                    round_idx=ri,
+                    input_tokens=rd["input"],
+                    expected_output_tokens=rd["output"],
+                    actual_output_tokens=0,
+                    prompt_tokens=0,
+                    cached_tokens=0,
+                    ttft=0,
+                    total_time=0,
+                    success=False,
+                    error=str(last_error)[:300],
+                    session_time=session_exec_time,
+                ),
+                metrics,
+                progress,
+                output_file,
+                output_lock,
+            )
             break
 
     progress["sessions"] += 1
@@ -201,6 +263,39 @@ async def progress_reporter(progress: dict, total_sessions: int, total_rounds: i
             f"failed {progress['failed']}",
             flush=True,
         )
+
+
+async def summary_reporter(
+    metrics: List[RoundMetric],
+    progress: dict,
+    total_sessions: int,
+    total_rounds: int,
+    interval_secs: float,
+    output_file,
+    output_lock: asyncio.Lock,
+):
+    """Append cumulative summaries every interval_secs seconds."""
+    interval_idx = 0
+    while progress["sessions"] < total_sessions:
+        await asyncio.sleep(interval_secs)
+        interval_idx += 1
+        elapsed = time.monotonic() - progress["t0"]
+        summary = build_summary(metrics, elapsed)
+        summary.update({
+            "type": "interval_summary",
+            "interval_index": interval_idx,
+            "interval_secs": interval_secs,
+            "elapsed_secs": round(elapsed, 2),
+            "loaded_sessions": total_sessions,
+            "completed_sessions": progress["sessions"],
+            "planned_rounds": total_rounds,
+            "completion_ratio": round(progress["rounds"] / total_rounds, 6)
+            if total_rounds > 0
+            else 0,
+        })
+        async with output_lock:
+            output_file.write(json.dumps(summary) + "\n")
+            output_file.flush()
 
 
 def percentile(data: list, p: float) -> float:
@@ -330,6 +425,10 @@ async def main():
                         help="Sampling temperature")
     parser.add_argument("--timeout", type=int, default=1800,
                         help="Per-request timeout in seconds")
+    parser.add_argument("--max-duration", type=float, default=None,
+                        help="Stop the client after this many seconds and write a partial summary")
+    parser.add_argument("--summary-interval", type=float, default=None,
+                        help="Append cumulative interval summaries every N seconds")
     parser.add_argument("--output", default="workload_metrics.jsonl",
                         help="Path to write per-round metrics JSONL and final summary")
     args = parser.parse_args()
@@ -352,6 +451,10 @@ async def main():
     print(f"Expected tokens: {total_input:,} in / {total_output:,} out")
     print(f"Target: {args.base_url}")
     print(f"ignore_eos: {not args.no_ignore_eos}")
+    if args.max_duration is not None:
+        print(f"Max duration: {args.max_duration:g}s")
+    if args.summary_interval is not None:
+        print(f"Summary interval: {args.summary_interval:g}s")
     print()
 
     all_metrics: list[RoundMetric] = []
@@ -360,54 +463,87 @@ async def main():
     connector = aiohttp.TCPConnector(limit=0, limit_per_host=0)
     timeout = aiohttp.ClientTimeout(total=args.timeout)
 
-    async with aiohttp.ClientSession(connector=connector, timeout=timeout) as http:
-        endpoint = f"{args.base_url}/v1/chat/completions"
+    out_path = args.output
+    output_lock = asyncio.Lock()
+    stop_reason = "completed"
 
-        reporter = asyncio.create_task(
-            progress_reporter(progress, len(sessions), total_rounds)
-        )
+    with open(out_path, "w") as output_file:
+        async with aiohttp.ClientSession(connector=connector, timeout=timeout) as http:
+            endpoint = f"{args.base_url}/v1/chat/completions"
 
-        wall_start = time.monotonic()
-        tasks = [
-            run_session(
-                s, endpoint, http, all_metrics, progress,
-                ignore_eos=not args.no_ignore_eos,
-                temperature=args.temperature,
-                model=args.model,
+            reporter = asyncio.create_task(
+                progress_reporter(progress, len(sessions), total_rounds)
             )
-            for s in sessions
-        ]
-        await asyncio.gather(*tasks)
-        wall_time = time.monotonic() - wall_start
+            summary_task = (
+                asyncio.create_task(
+                    summary_reporter(
+                        all_metrics,
+                        progress,
+                        len(sessions),
+                        total_rounds,
+                        args.summary_interval,
+                        output_file,
+                        output_lock,
+                    )
+                )
+                if args.summary_interval is not None
+                else None
+            )
 
-        reporter.cancel()
-        try:
-            await reporter
-        except asyncio.CancelledError:
-            pass
+            wall_start = time.monotonic()
+            tasks = [
+                asyncio.create_task(
+                    run_session(
+                        s, endpoint, http, all_metrics, progress,
+                        ignore_eos=not args.no_ignore_eos,
+                        temperature=args.temperature,
+                        model=args.model,
+                        output_file=output_file,
+                        output_lock=output_lock,
+                    )
+                )
+                for s in sessions
+            ]
+
+            try:
+                gather = asyncio.gather(*tasks)
+                if args.max_duration is None:
+                    await gather
+                else:
+                    await asyncio.wait_for(gather, timeout=args.max_duration)
+            except asyncio.TimeoutError:
+                stop_reason = "max_duration"
+                for task in tasks:
+                    task.cancel()
+                await asyncio.gather(*tasks, return_exceptions=True)
+            finally:
+                wall_time = time.monotonic() - wall_start
+                reporter.cancel()
+                try:
+                    await reporter
+                except asyncio.CancelledError:
+                    pass
+                if summary_task is not None:
+                    summary_task.cancel()
+                    try:
+                        await summary_task
+                    except asyncio.CancelledError:
+                        pass
 
     summary = print_report(all_metrics, wall_time)
+    summary.update({
+        "stop_reason": stop_reason,
+        "loaded_sessions": len(sessions),
+        "completed_sessions": progress["sessions"],
+        "planned_rounds": total_rounds,
+        "completion_ratio": round(progress["rounds"] / total_rounds, 6)
+        if total_rounds > 0
+        else 0,
+    })
+    if args.max_duration is not None:
+        summary["max_duration"] = args.max_duration
 
-    # Save detailed metrics + summary
-    out_path = args.output
-    with open(out_path, "w") as f:
-        for m in all_metrics:
-            f.write(json.dumps({
-                "type": "round",
-                "session_id": m.session_id,
-                "round_idx": m.round_idx,
-                "input_tokens": m.input_tokens,
-                "expected_output_tokens": m.expected_output_tokens,
-                "actual_output_tokens": m.actual_output_tokens,
-                "prompt_tokens": m.prompt_tokens,
-                "cached_tokens": m.cached_tokens,
-                "cache_hit_rate": round(m.cached_tokens / m.prompt_tokens, 6) if m.prompt_tokens > 0 else 0,
-                "ttft": round(m.ttft, 4),
-                "total_time": round(m.total_time, 4),
-                "session_time": round(m.session_time, 4),
-                "success": m.success,
-                "error": m.error or None,
-            }) + "\n")
+    with open(out_path, "a") as f:
         f.write(json.dumps({"type": "summary", **summary}) + "\n")
     print(f"\nDetailed per-round metrics + summary saved to {out_path}")
 
