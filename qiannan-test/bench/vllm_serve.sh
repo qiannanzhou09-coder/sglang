@@ -1,0 +1,1 @@
+vllm serve /inspire/hdd/global_public/public_models/Qwen/Qwen3.5-122B-A10B-FP8 --port 8000 --tensor-parallel-size 8 --max-model-len 262144 --reasoning-parser qwen3 --language-model-only  --enable-auto-tool-choice --tool-call-parser qwen3_coder --speculative-config '{"method":"qwen3_next_mtp","num_speculative_tokens":2}'

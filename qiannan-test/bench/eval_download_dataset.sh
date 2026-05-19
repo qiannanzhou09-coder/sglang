@@ -1,0 +1,1 @@
+python -c "from datasets import load_dataset; load_dataset('gsm8k', 'main')"

@@ -1,0 +1,463 @@
+CPU 机推荐流程
+
+  先从干净容器开始，最好基于你现在选的同一张基础镜像。
+
+  git clone https://github.com/<你的用户名>/sglang.git
+  cd sglang
+  git fetch --tags
+  git checkout v0.5.10rc0
+
+  然后安装老师环境：
+
+  python3 -m pip install -r requirements_sglang.txt
+
+  注意这里会联网，因为文件里有 GitHub 依赖：
+  requirements_sglang.txt:88
+
+  如果你还要开发你自己的代码，再把源码切成 editable：
+
+  python3 -m pip install --no-deps --no-build-isolation -e "python[all]"
+
+  然后验证版本：
+
+python3 - <<'PY'
+import torch, sglang, importlib.metadata as m
+print("torch:", torch.__version__)
+print("sglang:", sglang.__version__)
+print("sglang-kernel:", m.version("sglang-kernel"))
+PY
+python3 -m pip install --upgrade \
+opentelemetry-api==1.41.1 \
+opentelemetry-sdk==1.41.1 \
+opentelemetry-exporter-otlp==1.41.1 \
+opentelemetry-exporter-otlp-proto-grpc==1.41.1 \
+opentelemetry-exporter-otlp-proto-http==1.41.1
+
+  如果版本对上了，再试 server
+  可以直接试：
+
+export HF_HUB_OFFLINE=1
+export TRANSFORMERS_OFFLINE=1
+
+python3 -m sglang.launch_server \
+--model-path /home/Qwen3.5-122B-A10B \
+--host 0.0.0.0 \
+--port 8000 \
+--tp-size 8
+
+  先用最小参数起，起得来再叠加投机解码、长上下文这些优化参数。你前面那套复杂参数没问题，但现在先别把问题复杂化。
+
+  结论
+
+  - 是，requirements_sglang.txt 值得直接用
+  - 但要把它当作 v0.5.10rc0 这一代源码的标准环境
+  - 最好在 CPU 机装好后固化成镜像，再给 GPU 跑
+
+  如果你愿意，我下一条可以直接给你一份最小 Dockerfile，按 requirements_sglang.txt + v0.5.10rc0 来做。
+
+─ Worked for 2m 18s ─────────────────────────
+
+
+CPU 机可以帮你把“环境装好”，但不能替代 GPU 启动验证。
+  因为你最终跑的是 CUDA + sglang-kernel + 多卡 TP 路线，真正会不会成功，还是要在 GPU 上过一次最小启动测试。
+
+  所以最合理的流程不是“CPU 全验证完再上 GPU”，而是：
+
+  1. CPU 机做镜像
+  2. GPU 机用一个 1B 小模型做 smoke test
+  3. 小模型能起，再换 122B 和完整参数
+
+  这样不会白搞，而且成本最低。
+
+  你现在最该做的方案
+
+  第一步：CPU 机做镜像，但只要求“环境对齐”
+  目标不是在 CPU 上把 122B 跑起来，而是确保镜像里这些版本一致：
+
+  - torch
+  - sglang
+  - sglang-kernel
+  - flashinfer
+  - 其他老师 requirement 里的包
+
+  CPU 机可以做这些验证：
+
+  python3 - <<'PY'
+  import torch, sglang, importlib.metadata as m
+  print("torch:", torch.__version__)
+  print("sglang:", sglang.__version__)
+  print("sglang-kernel:", m.version("sglang-kernel"))
+  PY
+
+  再跑环境检查：
+
+  python3 -m sglang.check_env
+
+  这一步只能证明：
+
+  - 包装对了
+  - import 通了
+  - 镜像没明显坏
+
+  它不能证明 CUDA server 一定能起。
+
+  第二步：GPU 机用 1B 模型做最小启动测试
+  这是关键步骤，也是你避免“白搞”的办法。
+
+  建议你先下一个小模型，比如：
+
+  - Qwen/Qwen2.5-1.5B-Instruct
+  - 或更小的 Qwen/Qwen2.5-0.5B-Instruct
+
+  然后在 GPU 机启动最小命令，不要一上来就带长上下文、投机解码、复杂 parser。
+
+  先用这种最小版：
+
+  cd /inspire/qb-ilm2/project/26summer-camp-18/26230029/sglang
+
+  export HF_HUB_OFFLINE=1
+  export TRANSFORMERS_OFFLINE=1
+
+  python3 -m sglang.launch_server \
+    --model-path /inspire/qb-ilm2/project/26summer-camp-18/26230029/models/Qwen2.5-1.5B-Instruct \
+    --host 0.0.0.0 \
+    --port 8000 \
+    --tp-size 1
+
+  如果你还想顺带验证多卡 TP/NCCL，再跑：
+
+  python3 -m sglang.launch_server \
+    --model-path /inspire/qb-ilm2/project/26summer-camp-18/26230029/models/Qwen2.5-1.5B-Instruct \
+    --host 0.0.0.0 \
+    --port 8000 \
+    --tp-size 8
+
+  这样你验证的是：
+
+  - torch 和 CUDA 是否匹配
+  - sglang-kernel 能不能真正加载
+  - server 能不能起来
+  - 多卡通讯有没有问题
+
+  第三步：小模型通过，再切 122B
+  等 1B / 1.5B 小模型能稳定起来，再换成你的大模型路径，再逐步加参数：
+
+  1. 先只换模型路径
+  2. 再加 --tp-size 8
+  3. 再加长上下文
+  4. 最后再加 speculative decoding / parser / cache 参数
+
+  不要一口气把所有复杂参数全加上，不然出问题时很难定位。
+
+  为什么这套流程最好
+  因为你现在真正需要的是两种验证：
+
+  - CPU 机
+      - 验证镜像构建没问题
+      - 依赖版本没乱
+  - GPU 机
+      - 验证 CUDA 运行时真的能起
+      - 验证 sglang-kernel 和 GPU/torch ABI 匹配
+
+  这两者缺一不可。
+
+  我的建议结论
+
+  - 是，先在 CPU 做镜像是对的
+  - 但 CPU 不需要也不应该去启动 122B server
+  - 真正的“避免白搞”方法是：GPU 上先用 1B 小模型 smoke test
+
+  如果你愿意，我下一条可以直接给你一份：
+
+  1. CPU 机自定义镜像 Dockerfile
+  2. GPU 机 1.5B smoke test 命令
+  3. smoke test 通过后切换到 122B 的命令顺序
+
+
+就你现在“尽快把 CPU 侧环境做对、然后上 GPU 跑起来”的目标，这一步是对的。
+
+  但有一个关键补充：
+
+  requirements_sglang.txt 装完后，不要马上起 server。先补一遍 cu130 的 sglang-kernel wheel。
+
+  因为你这台目标 GPU 机器是 CUDA 13.0，而老师的 requirements_sglang.txt 里只是：
+
+  sglang-kernel==0.4.0
+
+  这不一定会自动变成你要的 +cu130 版本。你前面已经踩过一次这个坑了。
+
+  最省事的流程
+
+  1. 先等这条命令跑完：
+
+  python3 -m pip install -r requirements_sglang.txt
+
+  2. 跑完以后，立刻强制安装 cu130 的 kernel wheel：
+
+  python3 -m pip install --force-reinstall --no-deps \
+  "https://github.com/sgl-project/whl/releases/download/v0.4.0/sglang_kernel-0.4.0+cu130-cp310-abi3-manylinux2014_x86_64.whl"
+
+  如果你的机器不是 x86_64，再换成 aarch64 版本。
+
+  3. 然后检查环境：
+
+  python3 - <<'PY'
+  import torch, importlib.metadata as m
+  print("torch:", torch.__version__, "cuda:", torch.version.cuda)
+  for pkg in ["sglang", "sglang-kernel", "transformers", "flashinfer-python", "flashinfer-cubin"]:
+      try:
+          print(pkg, m.version(pkg))
+      except Exception as e:
+          print(pkg, "MISSING", e)
+  PY
+
+  你希望看到的核心是：
+
+  - torch: 2.9.1
+  - cuda: 13.0
+  - sglang: 0.5.10rc0
+  - sglang-kernel: 0.4.0
+
+  4. 再跑环境检查：
+
+  python3 -m sglang.check_env
+
+  现在最重要的建议
+
+  - 先不要 pip install -e 你的本地源码
+  - 先不要切回 main
+  - 先把老师这套环境完整跑通并做成镜像
+
+  因为你现在的目标不是开发最新代码，而是先把服务拉起来。
+  等 GPU 上用 1B 小模型 smoke test 成功，再决定要不要把你的代码以 editable 方式挂进去。
+
+  接下来应该怎么验证
+
+  CPU 机这边做完后：
+
+  - 不要求把 122B server 在 CPU 上跑起来
+  - 只要求环境版本一致、镜像能构建
+
+  真正的启动验证放到 GPU 机，用 1B 小模型，比如：
+
+  - Qwen/Qwen2.5-0.5B-Instruct
+  - Qwen/Qwen2.5-1.5B-Instruct
+
+  如果你愿意，等你这条 pip install -r 跑完后，把输出最后几十行发我，我直接告诉你下一条该执行什么。
+
+ 
+› Write tests for @filename
+ 
+  gpt-5.4 xhigh · ~/Desktop/sglang
+  
+
+
+python3 -m pip check
+
+python3 - <<'PY'
+import torch, sglang, importlib.metadata as m
+print("torch:", torch.__version__, "cuda:", torch.version.cuda)
+print("cuda available:", torch.cuda.is_available())
+print("device count:", torch.cuda.device_count())
+print("sglang:", sglang.__version__)
+print("sglang-kernel:", m.version("sglang-kernel"))
+print("flashinfer-python:", m.version("flashinfer-python"))
+print("flashinfer-cubin:", m.version("flashinfer-cubin"))
+PY
+
+
+
+应该跑，而且保存镜像前必须跑一轮 CPU 侧验证。只是别误判：CPU 侧能确认“依赖和离线资源基本完整”，不能确认“GPU CUDA kernel 一定能跑”。
+
+  按这个顺序执行，全部通过后再保存镜像。
+
+  1. 先确认核心版本
+
+python3 - <<'PY'
+import sys, platform, torch, sglang, importlib.metadata as m
+
+print("python:", sys.version)
+print("arch:", platform.machine())
+print("torch:", torch.__version__)
+print("torch cuda:", torch.version.cuda)
+print("cuda available:", torch.cuda.is_available())
+print("sglang:", sglang.__version__)
+
+for p in [
+    "sglang-kernel",
+    "flashinfer-python",
+    "flashinfer-cubin",
+    "flash-attn-4",
+    "transformers",
+    "lm_eval",
+]:
+    try:
+        print(p + ":", m.version(p))
+    except Exception as e:
+        print(p + ": MISSING", e)
+PY
+
+  CPU 机上 cuda available: False 正常。你要重点看：
+
+  torch cuda: 13.0
+  sglang: 0.5.10rc0
+  sglang-kernel: 0.4.0+cu130
+
+  如果 sglang-kernel 不是 0.4.0+cu130，先补：
+
+  python3 -m pip install --force-reinstall --no-deps \
+    "https://github.com/sgl-project/whl/releases/download/v0.4.0/sglang_kernel-0.4.0+cu130-cp310-abi3-manylinux2014_x86_64.whl"
+
+  2. 检查依赖冲突
+
+  python3 -m pip check
+
+  如果还看到你刚才那个 opentelemetry 冲突，保存镜像前建议修掉：
+
+  python3 -m pip install --upgrade \
+    opentelemetry-api==1.41.1 \
+    opentelemetry-sdk==1.41.1 \
+    opentelemetry-exporter-otlp==1.41.1 \
+    opentelemetry-exporter-otlp-proto-grpc==1.41.1 \
+    opentelemetry-exporter-otlp-proto-http==1.41.1
+
+  然后再跑一次：
+
+  python3 -m pip check
+
+  3. 跑 import 测试
+
+python3 - <<'PY'
+import torch
+import sglang
+import transformers
+import flashinfer
+import lm_eval
+import xgrammar
+import compressed_tensors
+
+print("all imports ok")
+PY
+
+  这个通过，说明大部分 Python 环境没坏。
+
+  4. 跑 SGLang CLI 检查
+
+  python3 -m sglang.launch_server --help >/tmp/sglang_help.txt
+  python3 -m sglang.check_env
+
+  check_env 在 CPU 上可能提示没有 GPU/CUDA runtime，这不一定是失败；真正不能接受的是 Python import error、包缺失、版本不匹配、sglang-kernel 加载
+  报错。
+
+  5. 检查模型离线可读
+  如果 CPU 机上能看到模型目录，执行这个，不会加载 122B 权重，只读配置和 tokenizer：
+
+  export HF_HUB_OFFLINE=1
+  export TRANSFORMERS_OFFLINE=1
+
+  python3 - <<'PY'
+  from transformers import AutoConfig, AutoTokenizer
+
+  model_path = "/home/Qwen3.5-122B-A10B"
+
+  cfg = AutoConfig.from_pretrained(
+      model_path,
+      local_files_only=True,
+      trust_remote_code=True,
+  )
+  tok = AutoTokenizer.from_pretrained(
+      model_path,
+      local_files_only=True,
+      trust_remote_code=True,
+  )
+
+  print("model_type:", cfg.model_type)
+  print("vocab_size:", getattr(cfg, "vocab_size", None))
+  print("tokenizer ok:", tok.__class__.__name__)
+  PY
+
+  这个很重要。GPU 没网时，模型目录缺 tokenizer、config、remote code 文件，都会在这里提前暴露。
+
+  6. 保存镜像前留一份环境记录
+
+  python3 -m pip freeze > /tmp/requirements_final_freeze.txt
+
+  python3 - <<'PY' > /tmp/env_summary.txt
+  import torch, sglang, importlib.metadata as m
+  print("torch", torch.__version__, "cuda", torch.version.cuda)
+  print("sglang", sglang.__version__)
+  for p in ["sglang-kernel", "flashinfer-python", "flashinfer-cubin", "transformers"]:
+      print(p, m.version(p))
+  PY
+
+  如果上面 1-5 都通过，就值得保存镜像。保存后 GPU 机上只需要再做最终验证：torch.cuda.is_available()、device_count、小模型 tp-size 1 启动、再切
+  122B。
+
+
+python3 - <<'PY'
+import torch, torchvision, flashinfer, sglang
+import importlib.metadata as m
+
+print("torch:", torch.__version__)
+print("torch cuda:", torch.version.cuda)
+print("torchvision:", torchvision.__version__)
+print("sglang:", sglang.__version__)
+for p in ["sglang-kernel", "flashinfer-python", "flashinfer-cubin", "flashinfer-jit-cache"]:
+    print(p, m.version(p))
+print("ok")
+PY
+9]$ python3 - <<'PY'
+import torch, torchvision, flashinfer, sglang
+import importlib.metadata as m
+
+print("torch:", torch.__version__)
+print("torch cuda:", torch.version.cuda)
+print("torchvision:", torchvision.__version__)
+print("sglang:", sglang.__version__)
+for p in ["sglang-kernel", "flashinfer-python", "flashinfer-cubin", "flashinfer-jit-cache"]:
+    print(p, m.version(p))
+print("ok")
+PY
+
+
+python3 - <<'PY'
+import torch, torchvision, flashinfer, sglang
+import importlib.metadata as m
+
+print("torch:", torch.__version__)
+print("torch cuda:", torch.version.cuda)
+print("torchvision:", torchvision.__version__)
+print("sglang file:", getattr(sglang, "__file__", None))
+print("sglang version:", getattr(sglang, "__version__", None))
+print("sglang metadata:", m.version("sglang"))
+
+for p in ["sglang-kernel", "flashinfer-python", "flashinfer-cubin", "flashinfer-jit-cache"]:
+    print(p, m.version(p))
+
+print("ok")
+PY
+[root:26230029]$ 
+
+
+python3 - <<'PY'
+import importlib.metadata as m
+dist = m.distribution("sglang-kernel")
+print("version:", m.version("sglang-kernel"))
+print("location:", dist.locate_file(""))
+print("direct_url:")
+print(dist.read_text("direct_url.json"))
+PY
+
+python3 - <<'PY'
+import torch, torchvision, flashinfer, sglang
+import importlib.metadata as m
+
+print("torch:", torch.__version__)
+print("torch cuda:", torch.version.cuda)
+print("torchvision:", torchvision.__version__)
+print("sglang file:", getattr(sglang, "__file__", None))
+print("sglang version:", getattr(sglang, "__version__", None))
+for p in ["sglang-kernel", "flashinfer-python", "flashinfer-cubin", "flashinfer-jit-cache", "transformers"]:
+    print(p + ":", m.version(p))
+print("save image precheck ok")
+PY
