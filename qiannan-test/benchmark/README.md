@@ -24,8 +24,11 @@ bash qiannan-test/benchmark/run_one.sh list
 All outputs are written under:
 
 ```text
-qiannan-test/benchmark_runs/<batch_id>/<case_id>/
+qiannan-test/benchmark_runs/<case_id>/
 ```
+
+If that case directory already exists and is not empty, the runner appends a
+timestamp, for example `04_admission_pruned_dp2tp8_hicache_ratio4_20260519_164704`.
 
 Each run directory contains `resolved_config.json`, `commands.json`, logs for
 the started components, `client_metrics.jsonl`, `interval_summaries.jsonl`, and

@@ -438,9 +438,20 @@ def run_workload(cmd: list[str], log_path: Path) -> None:
         raise subprocess.CalledProcessError(code, cmd)
 
 
-def run_case(case_id: str, batch_id: str, output_root: Path) -> None:
+def choose_run_dir(output_root: Path, case_id: str) -> Path:
+    if os.environ.get("BENCH_RUN_NAME"):
+        return output_root / os.environ["BENCH_RUN_NAME"]
+
+    base = output_root / case_id
+    if not base.exists() or not any(base.iterdir()):
+        return base
+
+    return output_root / f"{case_id}_{time.strftime('%Y%m%d_%H%M%S')}"
+
+
+def run_case(case_id: str, output_root: Path) -> None:
     case = load_case(case_id)
-    run_dir = output_root / batch_id / case["id"]
+    run_dir = choose_run_dir(output_root, case["id"])
     run_dir.mkdir(parents=True, exist_ok=True)
 
     with (run_dir / "resolved_config.json").open("w") as f:
@@ -534,18 +545,17 @@ def main() -> int:
         print("\n".join(case_ids()))
         return 0
 
-    batch_id = os.environ.get("BENCH_BATCH_ID") or time.strftime("%Y%m%d_%H%M%S")
     output_root = Path(os.environ.get("BENCH_OUTPUT_ROOT", str(TEST_ROOT / "benchmark_runs")))
 
     if args.command == "run":
-        run_case(args.case_id, batch_id, output_root)
+        run_case(args.case_id, output_root)
         return 0
 
     failed: list[str] = []
     for case_id in case_ids():
         print(f"\n[bench] ===== {case_id} =====", flush=True)
         try:
-            run_case(case_id, batch_id, output_root)
+            run_case(case_id, output_root)
         except Exception as exc:
             print(f"[bench] FAIL {case_id}: {exc}", file=sys.stderr, flush=True)
             failed.append(case_id)
@@ -558,7 +568,7 @@ def main() -> int:
             print(f"  {case_id}", file=sys.stderr)
         return 1
 
-    print(f"\n[bench] all cases completed: {output_root / batch_id}", flush=True)
+    print(f"\n[bench] all cases completed: {output_root}", flush=True)
     return 0
 
 
