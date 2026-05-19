@@ -135,6 +135,24 @@ The pruned checkpoint is reused if it already exists. Set
 `BASE_MODEL_PATH` for the source checkpoint and `PRUNED_MODEL_PATH` only when
 you want to force a specific output checkpoint directory.
 
+If the pruned checkpoint already exists and you only want to serve it with the
+current E configuration and speculative decoding disabled:
+
+```bash
+bash qiannan-test/scripts/serve_E_pruned_dpa_tp8_dp2.sh
+bash qiannan-test/scripts/router_E_dp2_cache_aware.sh
+SUMMARY_INTERVAL=60 bash qiannan-test/scripts/client_E_pruned_dpa_tp8_dp2_router_full.sh
+```
+
+The default pruned model path is:
+
+```text
+/home/qwen3.5-pruned-models/Qwen3.5-122B-A10B-REAP-20-text-only
+```
+
+Override it with `PRUNED_MODEL_PATH` if your generated model directory has a
+different name.
+
 ## Client Workload Scripts
 
 Run one fixture against the matching endpoint:
