@@ -263,7 +263,8 @@ def ensure_ports_free(case: dict[str, Any]) -> None:
     if busy:
         detail = "\n".join(f"  {name}: 127.0.0.1:{port}" for name, port in busy)
         raise RuntimeError(
-            "Required port is already in use. Stop the old process or choose another port.\n"
+            "Required port is still in use after pre-run cleanup. "
+            "Stop the old process or choose another port.\n"
             f"{detail}"
         )
 
@@ -484,14 +485,14 @@ def cleanup_gpu_processes() -> None:
     if not pids:
         return
 
-    if os.environ.get("BENCH_KILL_ALL_GPU_PROCESSES") == "1":
-        targets = {pid for pid in pids if pid_is_current_user(pid)}
-    else:
+    if os.environ.get("BENCH_ONLY_KILL_BENCHMARK_GPU_PROCESSES") == "1":
         targets = {
             pid
             for pid in pids
             if pid_is_current_user(pid) and benchmark_related_pid(pid)
         }
+    else:
+        targets = {pid for pid in pids if pid_is_current_user(pid)}
 
     if targets:
         kill_pids(targets, "stale GPU process")
