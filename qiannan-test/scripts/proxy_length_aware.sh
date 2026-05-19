@@ -15,6 +15,18 @@ LENGTH_THRESHOLD="${LENGTH_THRESHOLD:-2048}"
 CHARS_PER_TOKEN="${CHARS_PER_TOKEN:-2.0}"
 PROXY_METRICS_PATH="${PROXY_METRICS_PATH:-${TEST_ROOT}/runs/proxy_length_aware_metrics.jsonl}"
 MAX_INFLIGHT_REQUESTS="${MAX_INFLIGHT_REQUESTS:-}"
+DYNAMIC_ADMISSION="${DYNAMIC_ADMISSION:-}"
+DYNAMIC_MIN_INFLIGHT_REQUESTS="${DYNAMIC_MIN_INFLIGHT_REQUESTS:-}"
+DYNAMIC_INITIAL_INFLIGHT_REQUESTS="${DYNAMIC_INITIAL_INFLIGHT_REQUESTS:-}"
+DYNAMIC_MAX_INFLIGHT_REQUESTS="${DYNAMIC_MAX_INFLIGHT_REQUESTS:-}"
+DYNAMIC_CONTROL_INTERVAL="${DYNAMIC_CONTROL_INTERVAL:-}"
+DYNAMIC_MIN_SAMPLES="${DYNAMIC_MIN_SAMPLES:-}"
+DYNAMIC_LOW_CACHE_HIT="${DYNAMIC_LOW_CACHE_HIT:-}"
+DYNAMIC_HIGH_CACHE_HIT="${DYNAMIC_HIGH_CACHE_HIT:-}"
+DYNAMIC_HIGH_TTFT="${DYNAMIC_HIGH_TTFT:-}"
+DYNAMIC_HIGH_QUEUE_WAIT="${DYNAMIC_HIGH_QUEUE_WAIT:-}"
+DYNAMIC_ADDITIVE_STEP="${DYNAMIC_ADDITIVE_STEP:-}"
+DYNAMIC_DECREASE_FACTOR="${DYNAMIC_DECREASE_FACTOR:-}"
 
 PROXY_ARGS=(
   --host "${PROXY_HOST}"
@@ -29,6 +41,56 @@ PROXY_ARGS=(
 
 if [[ -n "${MAX_INFLIGHT_REQUESTS}" ]]; then
   PROXY_ARGS+=(--max-inflight-requests "${MAX_INFLIGHT_REQUESTS}")
+fi
+
+case "${DYNAMIC_ADMISSION}" in
+  1|true|TRUE|True|on|ON|On|yes|YES|Yes)
+    PROXY_ARGS+=(--dynamic-admission)
+    ;;
+esac
+
+if [[ -n "${DYNAMIC_MIN_INFLIGHT_REQUESTS}" ]]; then
+  PROXY_ARGS+=(--dynamic-min-inflight-requests "${DYNAMIC_MIN_INFLIGHT_REQUESTS}")
+fi
+
+if [[ -n "${DYNAMIC_INITIAL_INFLIGHT_REQUESTS}" ]]; then
+  PROXY_ARGS+=(--dynamic-initial-inflight-requests "${DYNAMIC_INITIAL_INFLIGHT_REQUESTS}")
+fi
+
+if [[ -n "${DYNAMIC_MAX_INFLIGHT_REQUESTS}" ]]; then
+  PROXY_ARGS+=(--dynamic-max-inflight-requests "${DYNAMIC_MAX_INFLIGHT_REQUESTS}")
+fi
+
+if [[ -n "${DYNAMIC_CONTROL_INTERVAL}" ]]; then
+  PROXY_ARGS+=(--dynamic-control-interval "${DYNAMIC_CONTROL_INTERVAL}")
+fi
+
+if [[ -n "${DYNAMIC_MIN_SAMPLES}" ]]; then
+  PROXY_ARGS+=(--dynamic-min-samples "${DYNAMIC_MIN_SAMPLES}")
+fi
+
+if [[ -n "${DYNAMIC_LOW_CACHE_HIT}" ]]; then
+  PROXY_ARGS+=(--dynamic-low-cache-hit "${DYNAMIC_LOW_CACHE_HIT}")
+fi
+
+if [[ -n "${DYNAMIC_HIGH_CACHE_HIT}" ]]; then
+  PROXY_ARGS+=(--dynamic-high-cache-hit "${DYNAMIC_HIGH_CACHE_HIT}")
+fi
+
+if [[ -n "${DYNAMIC_HIGH_TTFT}" ]]; then
+  PROXY_ARGS+=(--dynamic-high-ttft "${DYNAMIC_HIGH_TTFT}")
+fi
+
+if [[ -n "${DYNAMIC_HIGH_QUEUE_WAIT}" ]]; then
+  PROXY_ARGS+=(--dynamic-high-queue-wait "${DYNAMIC_HIGH_QUEUE_WAIT}")
+fi
+
+if [[ -n "${DYNAMIC_ADDITIVE_STEP}" ]]; then
+  PROXY_ARGS+=(--dynamic-additive-step "${DYNAMIC_ADDITIVE_STEP}")
+fi
+
+if [[ -n "${DYNAMIC_DECREASE_FACTOR}" ]]; then
+  PROXY_ARGS+=(--dynamic-decrease-factor "${DYNAMIC_DECREASE_FACTOR}")
 fi
 
 python3 "${TEST_ROOT}/proxy/main.py" "${PROXY_ARGS[@]}"
