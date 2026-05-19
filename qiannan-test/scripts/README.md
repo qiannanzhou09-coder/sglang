@@ -119,3 +119,12 @@ MAX_SESSIONS=2 bash qiannan-test/scripts/client_A_tp8.sh T1
 RUN_ID=A_t1_smoke bash qiannan-test/scripts/client_A_tp8.sh T1
 BASE_URL=http://localhost:31000 bash qiannan-test/scripts/client_B_dpa_tp8_dp8_router.sh T6
 ```
+
+## Full Workload Client Scripts
+
+These wrappers run `qiannan-test/bench/workload_data.jsonl` instead of T1/T6.
+
+```bash
+bash qiannan-test/scripts/client_A_tp8_full.sh
+bash qiannan-test/scripts/client_B2_dpa_tp8_dp8_router_compensated_full.sh
+```
