@@ -12,7 +12,6 @@ WORKER_URL_BASE="${WORKER_URL_BASE:-http://127.0.0.1:${SGLANG_PORT}}"
 ROUTER_POLICY="${ROUTER_POLICY:-cache_aware}"
 DP_SIZE="${DP_SIZE:?DP_SIZE must be set before sourcing _common_router.sh}"
 
-WORKER_URLS=()
-for ((rank = 0; rank < DP_SIZE; rank++)); do
-  WORKER_URLS+=("${WORKER_URL_BASE}@${rank}")
-done
+# Current sglang_router expects the base SGLang URL in --dp-aware mode.
+# It discovers dp_size from /server_info and creates internal @rank workers.
+WORKER_URLS=("${WORKER_URL_BASE}")
