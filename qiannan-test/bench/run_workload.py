@@ -104,6 +104,7 @@ async def stream_round(
     ignore_eos: bool,
     temperature: float,
     model: str,
+    headers: Optional[dict[str, str]] = None,
 ) -> tuple:
     """Send one streaming chat-completion request. Returns (content, ttft, total_time, usage)."""
     payload = {
@@ -122,7 +123,7 @@ async def stream_round(
     chunks: list[str] = []
     usage = {}
 
-    async with http.post(url, json=payload) as resp:
+    async with http.post(url, json=payload, headers=headers) as resp:
         if resp.status != 200:
             body = await resp.text()
             raise RuntimeError(f"HTTP {resp.status}: {body[:300]}")
@@ -173,6 +174,7 @@ async def run_session(
 ):
     """Run all rounds of a single session sequentially."""
     sid = session_data["id"]
+    total_rounds = len(session_data["rounds"])
     messages = [{"role": "system", "content": session_data["system_prompt"]}]
     session_exec_time = 0.0
 
@@ -186,8 +188,21 @@ async def run_session(
         last_error = None
         for attempt in range(max_retries):
             try:
+                headers = {
+                    "x-session-id": str(sid),
+                    "x-session-round-idx": str(ri),
+                    "x-session-rounds": str(total_rounds),
+                    "x-session-final-round": "1" if ri == total_rounds - 1 else "0",
+                }
                 content, ttft, total_time, usage = await stream_round(
-                    http, endpoint, messages, rd["output"], ignore_eos, temperature, model
+                    http,
+                    endpoint,
+                    messages,
+                    rd["output"],
+                    ignore_eos,
+                    temperature,
+                    model,
+                    headers=headers,
                 )
                 actual_out = usage.get("completion_tokens", 0)
                 prompt_tokens = usage.get("prompt_tokens") or 0

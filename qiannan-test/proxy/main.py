@@ -119,6 +119,22 @@ def round_optional(value: float | None, digits: int = 6) -> float | None:
     return round(value, digits)
 
 
+def parse_int_header(headers: Any, name: str) -> int | None:
+    value = headers.get(name)
+    if value is None:
+        return None
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return None
+
+
+def truthy_header(value: str | None) -> bool:
+    if value is None:
+        return False
+    return value.lower() in {"1", "true", "yes", "on"}
+
+
 def observe_sse_line(
     line: str,
     observation: dict[str, Any],
@@ -168,11 +184,15 @@ class ProxyState:
         self.admission_semaphore: asyncio.Semaphore | None = None
         self.admission_lock: asyncio.Lock | None = None
         self.admission_condition: asyncio.Condition | None = None
+        self.session_condition: asyncio.Condition | None = None
         self.dynamic_task: asyncio.Task | None = None
+        self.session_cleanup_task: asyncio.Task | None = None
         self.completed_stats_lock: asyncio.Lock | None = None
         self.completed_request_stats: list[dict[str, Any]] = []
         self.active_requests = 0
         self.waiting_requests = 0
+        self.active_sessions: dict[str, dict[str, Any]] = {}
+        self.waiting_session_requests = 0
         self.current_inflight_limit: int | None = None
         if args.dynamic_admission:
             initial_limit = (
@@ -200,17 +220,38 @@ class ProxyState:
         self.http = aiohttp.ClientSession(timeout=timeout, connector=connector)
         self.admission_lock = asyncio.Lock()
         self.admission_condition = asyncio.Condition(self.admission_lock)
+        self.session_condition = asyncio.Condition(asyncio.Lock())
         self.completed_stats_lock = asyncio.Lock()
         if self.args.max_inflight_requests is not None and not self.args.dynamic_admission:
             self.admission_semaphore = asyncio.Semaphore(self.args.max_inflight_requests)
+        if self.args.max_active_sessions is not None:
+            self.session_cleanup_task = asyncio.create_task(self.session_cleanup_loop())
         if self.args.dynamic_admission:
             self.dynamic_task = asyncio.create_task(self.dynamic_admission_loop())
+        self.log({
+            "type": "proxy_start",
+            "t": round(time.time(), 6),
+            "policy": self.args.policy,
+            "direct_url": self.args.direct_url,
+            "router_url": self.args.router_url,
+            "max_inflight_requests": self.args.max_inflight_requests,
+            "max_active_sessions": self.args.max_active_sessions,
+            "dynamic_admission": self.args.dynamic_admission,
+            "current_inflight_limit": self.current_inflight_limit,
+            "session_idle_timeout": self.args.session_idle_timeout,
+        })
 
     async def close(self) -> None:
         if self.dynamic_task is not None:
             self.dynamic_task.cancel()
             try:
                 await self.dynamic_task
+            except asyncio.CancelledError:
+                pass
+        if self.session_cleanup_task is not None:
+            self.session_cleanup_task.cancel()
+            try:
+                await self.session_cleanup_task
             except asyncio.CancelledError:
                 pass
         if self.http is not None:
@@ -312,6 +353,125 @@ class ProxyState:
         if self.admission_semaphore is not None:
             self.admission_semaphore.release()
         return active_requests, waiting_requests
+
+    async def acquire_session_admission(
+        self,
+        session_id: str | None,
+    ) -> tuple[float, int, int, int | None, bool]:
+        if self.args.max_active_sessions is None:
+            return 0.0, 0, 0, None, False
+        if session_id is None:
+            return 0.0, 0, 0, self.args.max_active_sessions, False
+
+        assert self.session_condition is not None
+        wait_start = time.monotonic()
+        waiting_added = False
+        try:
+            async with self.session_condition:
+                if session_id in self.active_sessions:
+                    meta = self.active_sessions[session_id]
+                    meta["last_seen"] = time.monotonic()
+                    meta["requests"] += 1
+                    return (
+                        0.0,
+                        len(self.active_sessions),
+                        self.waiting_session_requests,
+                        self.args.max_active_sessions,
+                        True,
+                    )
+
+                self.waiting_session_requests += 1
+                waiting_added = True
+                while (
+                    session_id not in self.active_sessions
+                    and len(self.active_sessions) >= self.args.max_active_sessions
+                ):
+                    await self.session_condition.wait()
+
+                queue_wait = time.monotonic() - wait_start
+                self.waiting_session_requests -= 1
+                waiting_added = False
+
+                if session_id not in self.active_sessions:
+                    now = time.monotonic()
+                    self.active_sessions[session_id] = {
+                        "started": now,
+                        "last_seen": now,
+                        "requests": 0,
+                    }
+                meta = self.active_sessions[session_id]
+                meta["last_seen"] = time.monotonic()
+                meta["requests"] += 1
+                return (
+                    queue_wait,
+                    len(self.active_sessions),
+                    self.waiting_session_requests,
+                    self.args.max_active_sessions,
+                    True,
+                )
+        except BaseException:
+            async with self.session_condition:
+                if waiting_added:
+                    self.waiting_session_requests -= 1
+                    self.session_condition.notify_all()
+            raise
+
+    async def release_session_if_done(
+        self,
+        session_id: str | None,
+        should_release: bool,
+    ) -> tuple[int, int]:
+        if (
+            self.args.max_active_sessions is None
+            or session_id is None
+            or not should_release
+        ):
+            return len(self.active_sessions), self.waiting_session_requests
+
+        assert self.session_condition is not None
+        async with self.session_condition:
+            self.active_sessions.pop(session_id, None)
+            active_sessions = len(self.active_sessions)
+            waiting_sessions = self.waiting_session_requests
+            self.session_condition.notify_all()
+            return active_sessions, waiting_sessions
+
+    async def session_snapshot(self) -> dict[str, Any]:
+        if self.session_condition is None:
+            return {
+                "active_sessions": 0,
+                "waiting_session_requests": 0,
+                "max_active_sessions": self.args.max_active_sessions,
+            }
+
+        async with self.session_condition:
+            return {
+                "active_sessions": len(self.active_sessions),
+                "waiting_session_requests": self.waiting_session_requests,
+                "max_active_sessions": self.args.max_active_sessions,
+            }
+
+    async def session_cleanup_loop(self) -> None:
+        while True:
+            await asyncio.sleep(self.args.session_cleanup_interval)
+            assert self.session_condition is not None
+            now = time.monotonic()
+            expired: list[str] = []
+            async with self.session_condition:
+                for session_id, meta in self.active_sessions.items():
+                    if now - meta["last_seen"] > self.args.session_idle_timeout:
+                        expired.append(session_id)
+                for session_id in expired:
+                    self.active_sessions.pop(session_id, None)
+                if expired:
+                    self.session_condition.notify_all()
+            for session_id in expired:
+                self.log({
+                    "type": "session_admission_timeout",
+                    "t": round(time.time(), 6),
+                    "session_id": session_id,
+                    "session_idle_timeout": self.args.session_idle_timeout,
+                })
 
     async def record_completed_request(self, stat: dict[str, Any]) -> None:
         if not self.args.dynamic_admission:
@@ -529,7 +689,11 @@ class ProxyState:
 
 async def health(request: web.Request) -> web.Response:
     state: ProxyState = request.app["state"]
-    return web.json_response({"ok": True, "admission": await state.admission_snapshot()})
+    return web.json_response({
+        "ok": True,
+        "admission": await state.admission_snapshot(),
+        "session_admission": await state.session_snapshot(),
+    })
 
 
 async def proxy_handler(request: web.Request) -> web.StreamResponse:
@@ -556,6 +720,22 @@ async def proxy_handler(request: web.Request) -> web.StreamResponse:
     target_url = target_base.rstrip("/") + request.rel_url.path_qs
 
     trace_id = request.headers.get("x-request-id") or uuid.uuid4().hex
+    session_id = request.headers.get("x-session-id")
+    session_round_idx = parse_int_header(request.headers, "x-session-round-idx")
+    session_rounds = parse_int_header(request.headers, "x-session-rounds")
+    session_is_final = truthy_header(request.headers.get("x-session-final-round"))
+    if (
+        not session_is_final
+        and session_round_idx is not None
+        and session_rounds is not None
+    ):
+        session_is_final = session_round_idx >= session_rounds - 1
+    if state.args.max_active_sessions is not None and session_id is None:
+        return web.json_response(
+            {"error": "session admission requires x-session-id header"},
+            status=400,
+        )
+
     headers = filter_request_headers(request.headers)
     headers["x-request-id"] = trace_id
     headers["x-proxy-target"] = target_kind
@@ -563,6 +743,13 @@ async def proxy_handler(request: web.Request) -> web.StreamResponse:
 
     status = 502
     error = None
+    session_slot_acquired = False
+    session_queue_wait = 0.0
+    active_sessions_at_admit = 0
+    waiting_session_requests_at_admit = 0
+    max_active_sessions_at_admit = None
+    active_sessions_after_done = 0
+    waiting_session_requests_after_done = 0
     admitted = False
     queue_wait = 0.0
     active_requests_at_admit = 0
@@ -578,6 +765,13 @@ async def proxy_handler(request: web.Request) -> web.StreamResponse:
         "upstream_ttft": None,
     }
     try:
+        (
+            session_queue_wait,
+            active_sessions_at_admit,
+            waiting_session_requests_at_admit,
+            max_active_sessions_at_admit,
+            session_slot_acquired,
+        ) = await state.acquire_session_admission(session_id)
         (
             queue_wait,
             active_requests_at_admit,
@@ -605,6 +799,15 @@ async def proxy_handler(request: web.Request) -> web.StreamResponse:
             response.headers["x-proxy-queue-wait"] = f"{queue_wait:.6f}"
             response.headers["x-proxy-active-requests"] = str(active_requests_at_admit)
             response.headers["x-proxy-waiting-requests"] = str(waiting_requests_at_admit)
+            if session_slot_acquired:
+                response.headers["x-proxy-session-queue-wait"] = f"{session_queue_wait:.6f}"
+                response.headers["x-proxy-active-sessions"] = str(active_sessions_at_admit)
+                response.headers["x-proxy-waiting-session-requests"] = str(
+                    waiting_session_requests_at_admit
+                )
+                response.headers["x-proxy-max-active-sessions"] = str(
+                    max_active_sessions_at_admit
+                )
             if inflight_limit_at_admit is not None:
                 response.headers["x-proxy-inflight-limit"] = str(inflight_limit_at_admit)
             if state.args.dynamic_admission:
@@ -650,6 +853,14 @@ async def proxy_handler(request: web.Request) -> web.StreamResponse:
             active_requests_after_done, waiting_requests_after_done = (
                 await state.release_admission()
             )
+        session_release = session_is_final or error is not None or status >= 400
+        (
+            active_sessions_after_done,
+            waiting_session_requests_after_done,
+        ) = await state.release_session_if_done(
+            session_id,
+            session_slot_acquired and session_release,
+        )
         prompt_tokens = int(observation.get("prompt_tokens") or 0)
         cached_tokens = int(observation.get("cached_tokens") or 0)
         completion_tokens = int(observation.get("completion_tokens") or 0)
@@ -674,10 +885,15 @@ async def proxy_handler(request: web.Request) -> web.StreamResponse:
             "path": request.rel_url.path_qs,
             "target": target_kind,
             "target_url": target_url,
+            "session_id": session_id,
+            "session_round_idx": session_round_idx,
+            "session_rounds": session_rounds,
+            "session_is_final": session_is_final,
             "prompt_tokens_estimate": prompt_tokens_estimate,
             "status": status,
             "latency": round(latency, 6),
             "queue_wait": round(queue_wait, 6),
+            "session_queue_wait": round(session_queue_wait, 6),
             "ttft": round_optional(observation.get("ttft")),
             "upstream_ttft": round_optional(observation.get("upstream_ttft")),
             "prompt_tokens": prompt_tokens,
@@ -688,6 +904,11 @@ async def proxy_handler(request: web.Request) -> web.StreamResponse:
             "waiting_requests_at_admit": waiting_requests_at_admit,
             "active_requests_after_done": active_requests_after_done,
             "waiting_requests_after_done": waiting_requests_after_done,
+            "active_sessions_at_admit": active_sessions_at_admit,
+            "waiting_session_requests_at_admit": waiting_session_requests_at_admit,
+            "active_sessions_after_done": active_sessions_after_done,
+            "waiting_session_requests_after_done": waiting_session_requests_after_done,
+            "max_active_sessions": state.args.max_active_sessions,
             "max_inflight_requests": state.args.max_inflight_requests,
             "dynamic_admission": state.args.dynamic_admission,
             "inflight_limit_at_admit": inflight_limit_at_admit,
@@ -748,6 +969,24 @@ def parse_args() -> argparse.Namespace:
         type=int,
         default=None,
         help="Request-level admission window. Requests above this limit wait in proxy.",
+    )
+    parser.add_argument(
+        "--max-active-sessions",
+        type=int,
+        default=None,
+        help="Session-level admission window. Requires x-session-id and holds a slot until the final round.",
+    )
+    parser.add_argument(
+        "--session-idle-timeout",
+        type=float,
+        default=3600.0,
+        help="Release an admitted session if no request for this many seconds.",
+    )
+    parser.add_argument(
+        "--session-cleanup-interval",
+        type=float,
+        default=30.0,
+        help="Seconds between idle session cleanup passes.",
     )
     parser.add_argument(
         "--dynamic-admission",
@@ -823,6 +1062,12 @@ def parse_args() -> argparse.Namespace:
     args = parser.parse_args()
     if args.max_inflight_requests is not None and args.max_inflight_requests <= 0:
         parser.error("--max-inflight-requests must be positive")
+    if args.max_active_sessions is not None and args.max_active_sessions <= 0:
+        parser.error("--max-active-sessions must be positive")
+    if args.session_idle_timeout <= 0:
+        parser.error("--session-idle-timeout must be positive")
+    if args.session_cleanup_interval <= 0:
+        parser.error("--session-cleanup-interval must be positive")
     if args.dynamic_min_inflight_requests <= 0:
         parser.error("--dynamic-min-inflight-requests must be positive")
     if args.dynamic_max_inflight_requests < args.dynamic_min_inflight_requests:
