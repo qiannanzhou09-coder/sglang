@@ -530,6 +530,34 @@ class FlashInferAttnBackend(AttentionBackend):
         max_num_tokens: int,
         kv_indices_buf: Optional[torch.Tensor] = None,
     ):
+        # CUDA graph capture may pad the max batch size above the request pool
+        # size for TP/CP alignment. Keep metadata buffers large enough for the
+        # padded batch size.
+        if max_bs + 1 > self.kv_indptr[0].shape[0]:
+            self.kv_indptr = [
+                torch.zeros(
+                    (max_bs + 1,), dtype=kv_indptr.dtype, device=kv_indptr.device
+                )
+                for kv_indptr in self.kv_indptr
+            ]
+        if max_bs > self.kv_last_page_len.shape[0]:
+            self.kv_last_page_len = torch.ones(
+                (max_bs,),
+                dtype=self.kv_last_page_len.dtype,
+                device=self.kv_last_page_len.device,
+            )
+        if (
+            not self.skip_prefill
+            and hasattr(self, "qo_indptr")
+            and max_bs + 1 > self.qo_indptr[0].shape[0]
+        ):
+            self.qo_indptr = [
+                torch.zeros(
+                    (max_bs + 1,), dtype=qo_indptr.dtype, device=qo_indptr.device
+                )
+                for qo_indptr in self.qo_indptr
+            ]
+
         if kv_indices_buf is None:
             cuda_graph_kv_indices = torch.zeros(
                 (max_num_tokens * self.max_context_len,),
