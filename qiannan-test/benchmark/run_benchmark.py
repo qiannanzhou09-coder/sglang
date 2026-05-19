@@ -333,7 +333,7 @@ class ManagedProcess:
             self.log_file.close()
 
 
-def tail(path: Path, lines: int = 80) -> str:
+def tail(path: Path, lines: int = 200) -> str:
     if not path.exists():
         return ""
     data = path.read_text(errors="replace").splitlines()

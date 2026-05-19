@@ -13,7 +13,7 @@
     "dp_size": 2,
     "enable_dp_attention": true,
     "speculative_algorithm": "NONE",
-    "sglang_enable_spec_v2": "0",
+    "sglang_enable_spec_v2": "1",
     "mem_fraction_static": "0.92",
     "context_length": "262144",
     "reasoning_parser": "qwen3",
