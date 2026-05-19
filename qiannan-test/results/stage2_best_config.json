@@ -1,0 +1,60 @@
+{
+  "stage": "stage2_parameter_tuning",
+  "selected_config_id": "E_dpa_tp8_dp2_router_hicache_mem092_ratio2_spec_off",
+  "created_at": "2026-05-19",
+  "based_on": "qiannan-test/results/stage1_best_config.json",
+  "architecture": {
+    "label": "E",
+    "description": "TP8 + DP2 DPA + cache-aware router",
+    "tp_size": 8,
+    "dp_size": 2,
+    "enable_dp_attention": true,
+    "router": {
+      "enabled": true,
+      "policy": "cache_aware",
+      "dp_aware": true,
+      "port": 30000
+    }
+  },
+  "server_env": {
+    "SPECULATIVE_ALGO": "NONE",
+    "MEM_FRACTION_STATIC": "0.92",
+    "ENABLE_HICACHE": "1",
+    "HICACHE_RATIO": "2",
+    "HICACHE_IO_BACKEND": "kernel",
+    "HICACHE_STORAGE_PREFETCH_POLICY": "wait_complete",
+    "HICACHE_WRITE_POLICY": "write_through",
+    "CHUNKED_PREFILL_SIZE": "16384",
+    "SCHEDULE_CONSERVATIVENESS": "3.33",
+    "SCHEDULE_POLICY": "lpm"
+  },
+  "client_env": {
+    "SUMMARY_INTERVAL": "60"
+  },
+  "commands": {
+    "server": "SPECULATIVE_ALGO=NONE MEM_FRACTION_STATIC=0.92 ENABLE_HICACHE=1 HICACHE_RATIO=2 HICACHE_IO_BACKEND=kernel HICACHE_STORAGE_PREFETCH_POLICY=wait_complete HICACHE_WRITE_POLICY=write_through bash qiannan-test/scripts/serve_E_dpa_tp8_dp2.sh",
+    "router": "bash qiannan-test/scripts/router_E_dp2_cache_aware.sh",
+    "client": "SUMMARY_INTERVAL=60 bash qiannan-test/scripts/client_E_dpa_tp8_dp2_router_full.sh",
+    "client_base_url": "http://localhost:30000"
+  },
+  "effective_values": {
+    "chunked_prefill_size": 8192,
+    "schedule_conservativeness": 1.0,
+    "speculative_decoding": "off",
+    "mem_fraction_static": 0.92,
+    "hicache": {
+      "enabled": true,
+      "ratio": 2,
+      "io_backend": "kernel",
+      "storage_prefetch_policy": "wait_complete",
+      "write_policy": "write_through"
+    }
+  },
+  "notes": [
+    "This is the stage-2 tuned winner on top of the stage-1 E architecture.",
+    "Speculative decoding is disabled.",
+    "HiCache is enabled with kernel IO, wait-complete prefetch, and write-through writes.",
+    "For DP2, SGLang divides chunked-prefill-size by 2 and multiplies schedule-conservativeness by 0.3 internally.",
+    "The full workload client emits interval summaries every 60 seconds."
+  ]
+}

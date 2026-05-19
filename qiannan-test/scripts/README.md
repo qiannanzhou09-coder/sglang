@@ -154,3 +154,31 @@ bash qiannan-test/scripts/client_B2_dpa_tp8_dp8_router_compensated_full.sh
 bash qiannan-test/scripts/client_E_dpa_tp8_dp2_router_full.sh
 bash qiannan-test/scripts/client_F_dpa_tp8_dp4_router_full.sh
 ```
+
+## Stage 2 Best Config
+
+Server:
+
+```bash
+SPECULATIVE_ALGO=NONE MEM_FRACTION_STATIC=0.92 ENABLE_HICACHE=1 HICACHE_RATIO=2 HICACHE_IO_BACKEND=kernel HICACHE_STORAGE_PREFETCH_POLICY=wait_complete HICACHE_WRITE_POLICY=write_through bash qiannan-test/scripts/serve_E_dpa_tp8_dp2.sh
+```
+
+Equivalent wrapper:
+
+```bash
+bash qiannan-test/scripts/serve_E_stage2_best_hicache.sh
+```
+
+Router:
+
+```bash
+bash qiannan-test/scripts/router_E_dp2_cache_aware.sh
+```
+
+Full workload client:
+
+```bash
+SUMMARY_INTERVAL=60 bash qiannan-test/scripts/client_E_dpa_tp8_dp2_router_full.sh
+```
+
+Machine-readable record: `qiannan-test/results/stage2_best_config.json`.
