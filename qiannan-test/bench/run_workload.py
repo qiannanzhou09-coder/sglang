@@ -318,12 +318,43 @@ async def summary_reporter(
     summary_file,
     output_lock: asyncio.Lock,
 ):
-    """Append cumulative summaries every interval_secs seconds."""
+    """Append cumulative summaries plus per-window deltas every interval_secs seconds."""
     interval_idx = 0
+    last_metric_count = 0
+    last_elapsed = 0.0
+    last_progress = {
+        "rounds": 0,
+        "failed": 0,
+        "sessions": 0,
+        "started_sessions": 0,
+    }
     while progress["sessions"] < total_sessions:
         await asyncio.sleep(interval_secs)
         interval_idx += 1
         elapsed = time.monotonic() - progress["t0"]
+        current_metric_count = len(metrics)
+        interval_metrics = metrics[last_metric_count:current_metric_count]
+        current_progress = {
+            "rounds": progress["rounds"],
+            "failed": progress["failed"],
+            "sessions": progress["sessions"],
+            "started_sessions": progress.get("started_sessions", 0),
+        }
+        progress_delta = {
+            k: current_progress[k] - last_progress.get(k, 0)
+            for k in current_progress
+        }
+        interval_delta = build_interval_delta(
+            interval_metrics,
+            last_elapsed,
+            elapsed,
+            progress_delta,
+            total_rounds,
+        )
+        last_metric_count = current_metric_count
+        last_elapsed = elapsed
+        last_progress = current_progress
+
         summary = build_summary(metrics, elapsed)
         summary.update({
             "type": "interval_summary",
@@ -339,6 +370,7 @@ async def summary_reporter(
             "completion_ratio": round(progress["rounds"] / total_rounds, 6)
             if total_rounds > 0
             else 0,
+            "interval_delta": interval_delta,
         })
         async with output_lock:
             summary_file.write(json.dumps(summary) + "\n")
@@ -409,6 +441,32 @@ def build_summary(metrics: List[RoundMetric], wall_time: float) -> dict:
             "p99": round(percentile(totals, 99), 4),
         },
     }
+
+
+def build_interval_delta(
+    metrics: List[RoundMetric],
+    window_start: float,
+    window_end: float,
+    progress_delta: dict,
+    total_rounds: int,
+) -> dict:
+    """Build stats for rounds completed since the previous interval summary."""
+    window_secs = max(window_end - window_start, 0.0)
+    delta = build_summary(metrics, window_secs)
+    delta.setdefault("wall_time", round(window_secs, 2))
+    if not metrics:
+        delta.pop("error", None)
+    delta.update({
+        "window_start_secs": round(window_start, 2),
+        "window_end_secs": round(window_end, 2),
+        "window_secs": round(window_secs, 2),
+        "started_sessions": progress_delta.get("started_sessions", 0),
+        "completed_sessions": progress_delta.get("sessions", 0),
+        "completion_ratio": round(progress_delta.get("rounds", 0) / total_rounds, 6)
+        if total_rounds > 0
+        else 0,
+    })
+    return delta
 
 
 def print_report(metrics: List[RoundMetric], wall_time: float) -> dict:

@@ -181,4 +181,8 @@ Full workload client:
 SUMMARY_INTERVAL=60 bash qiannan-test/scripts/client_E_dpa_tp8_dp2_router_full.sh
 ```
 
+`RUN_DIR/interval_summaries.jsonl` 的顶层字段仍是 0 到当前时间的累计统计；
+每条记录里的 `interval_delta` 是上一次 summary 到本次 summary 之间新完成 round 的窗口统计，
+包括该窗口内的 tokens、吞吐、TTFT 和 round latency 分位数。
+
 Machine-readable record: `qiannan-test/results/stage2_best_config.json`.
