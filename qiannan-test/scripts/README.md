@@ -127,4 +127,5 @@ These wrappers run `qiannan-test/bench/workload_data.jsonl` instead of T1/T6.
 ```bash
 bash qiannan-test/scripts/client_A_tp8_full.sh
 bash qiannan-test/scripts/client_B2_dpa_tp8_dp8_router_compensated_full.sh
+bash qiannan-test/scripts/client_E_dpa_tp8_dp2_router_full.sh
 ```
