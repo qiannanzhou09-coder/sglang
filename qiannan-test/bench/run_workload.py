@@ -24,6 +24,8 @@ class RoundMetric:
     input_tokens: int
     expected_output_tokens: int
     actual_output_tokens: int
+    prompt_tokens: int
+    cached_tokens: int
     ttft: float
     total_time: float
     success: bool
@@ -34,6 +36,14 @@ class RoundMetric:
 def dummy_text(num_tokens: int) -> str:
     """Return text that tokenizes to approximately num_tokens tokens."""
     return DUMMY_POOL[: num_tokens * 2]
+
+
+def extract_cached_tokens(usage: dict) -> int:
+    """Return cached prompt tokens from OpenAI-compatible usage metadata."""
+    details = usage.get("prompt_tokens_details") or {}
+    if isinstance(details, dict):
+        return int(details.get("cached_tokens") or 0)
+    return int(usage.get("cached_tokens") or 0)
 
 
 async def stream_round(
@@ -86,7 +96,10 @@ async def stream_round(
                 if not choices:
                     continue
                 delta = choices[0].get("delta", {})
-                content = delta.get("content", "")
+                content = delta.get("content") or ""
+                reasoning_content = delta.get("reasoning_content") or ""
+                if ttft is None and (content or reasoning_content):
+                    ttft = time.monotonic() - t0
                 if content:
                     if ttft is None:
                         ttft = time.monotonic() - t0
@@ -127,6 +140,8 @@ async def run_session(
                     http, endpoint, messages, rd["output"], ignore_eos, temperature, model
                 )
                 actual_out = usage.get("completion_tokens", 0)
+                prompt_tokens = usage.get("prompt_tokens", 0)
+                cached_tokens = extract_cached_tokens(usage)
                 messages.append({"role": "assistant", "content": content})
 
                 session_exec_time += time.monotonic() - round_start
@@ -136,6 +151,8 @@ async def run_session(
                     input_tokens=rd["input"],
                     expected_output_tokens=rd["output"],
                     actual_output_tokens=actual_out,
+                    prompt_tokens=prompt_tokens,
+                    cached_tokens=cached_tokens,
                     ttft=ttft,
                     total_time=total_time,
                     success=True,
@@ -160,6 +177,8 @@ async def run_session(
                 input_tokens=rd["input"],
                 expected_output_tokens=rd["output"],
                 actual_output_tokens=0,
+                prompt_tokens=0,
+                cached_tokens=0,
                 ttft=0,
                 total_time=0,
                 success=False,
@@ -218,6 +237,10 @@ def build_summary(metrics: List[RoundMetric], wall_time: float) -> dict:
     totals = [m.total_time for m in ok]
     total_input = sum(m.input_tokens for m in ok)
     total_output = sum(m.actual_output_tokens or m.expected_output_tokens for m in ok)
+    total_prompt = sum(m.prompt_tokens for m in ok)
+    total_cached = sum(m.cached_tokens for m in ok)
+    total_uncached_prompt = max(total_prompt - total_cached, 0)
+    cache_hit_rate = (total_cached / total_prompt) if total_prompt > 0 else 0.0
 
     return {
         "wall_time": round(wall_time, 2),
@@ -226,6 +249,10 @@ def build_summary(metrics: List[RoundMetric], wall_time: float) -> dict:
         "total_sessions": total_sessions,
         "avg_session_time": round(avg_session_time, 4),
         "total_input_tokens": total_input,
+        "total_prompt_tokens": total_prompt,
+        "total_cached_tokens": total_cached,
+        "total_uncached_prompt_tokens": total_uncached_prompt,
+        "cache_hit_rate": round(cache_hit_rate, 6),
         "total_output_tokens": total_output,
         "output_throughput_tok_s": round(total_output / wall_time, 1) if wall_time > 0 else 0,
         "request_throughput_req_s": round(len(ok) / wall_time, 2) if wall_time > 0 else 0,
@@ -263,6 +290,9 @@ def print_report(metrics: List[RoundMetric], wall_time: float) -> dict:
     print(f"  Successful rounds:    {summary['successful_rounds']}")
     print(f"  Failed rounds:        {summary['failed_rounds']}")
     print(f"  Total input tokens:   {summary['total_input_tokens']:>12,}")
+    print(f"  Total prompt tokens:  {summary['total_prompt_tokens']:>12,}")
+    print(f"  Cached prompt tokens: {summary['total_cached_tokens']:>12,}")
+    print(f"  Cache hit rate:       {summary['cache_hit_rate']:>12.4%}")
     print(f"  Total output tokens:  {summary['total_output_tokens']:>12,}")
     print(f"  Output throughput:    {summary['output_throughput_tok_s']:>12,.1f} tok/s")
     print(f"  Request throughput:   {summary['request_throughput_req_s']:>12,.2f} req/s")
@@ -371,6 +401,9 @@ async def main():
                 "input_tokens": m.input_tokens,
                 "expected_output_tokens": m.expected_output_tokens,
                 "actual_output_tokens": m.actual_output_tokens,
+                "prompt_tokens": m.prompt_tokens,
+                "cached_tokens": m.cached_tokens,
+                "cache_hit_rate": round(m.cached_tokens / m.prompt_tokens, 6) if m.prompt_tokens > 0 else 0,
                 "ttft": round(m.ttft, 4),
                 "total_time": round(m.total_time, 4),
                 "session_time": round(m.session_time, 4),
