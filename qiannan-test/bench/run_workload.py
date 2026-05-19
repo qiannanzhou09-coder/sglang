@@ -41,7 +41,7 @@ def dummy_text(num_tokens: int) -> str:
 def extract_cached_tokens(usage: dict) -> int:
     """Return cached prompt tokens from OpenAI-compatible usage metadata."""
     details = usage.get("prompt_tokens_details") or {}
-    if isinstance(details, dict):
+    if isinstance(details, dict) and "cached_tokens" in details:
         return int(details.get("cached_tokens") or 0)
     return int(usage.get("cached_tokens") or 0)
 
@@ -101,8 +101,6 @@ async def stream_round(
                 if ttft is None and (content or reasoning_content):
                     ttft = time.monotonic() - t0
                 if content:
-                    if ttft is None:
-                        ttft = time.monotonic() - t0
                     chunks.append(content)
 
     total_time = time.monotonic() - t0
@@ -140,7 +138,7 @@ async def run_session(
                     http, endpoint, messages, rd["output"], ignore_eos, temperature, model
                 )
                 actual_out = usage.get("completion_tokens", 0)
-                prompt_tokens = usage.get("prompt_tokens", 0)
+                prompt_tokens = usage.get("prompt_tokens") or 0
                 cached_tokens = extract_cached_tokens(usage)
                 messages.append({"role": "assistant", "content": content})
 
