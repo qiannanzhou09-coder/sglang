@@ -271,7 +271,7 @@ async def summary_reporter(
     total_sessions: int,
     total_rounds: int,
     interval_secs: float,
-    output_file,
+    summary_file,
     output_lock: asyncio.Lock,
 ):
     """Append cumulative summaries every interval_secs seconds."""
@@ -294,8 +294,8 @@ async def summary_reporter(
             else 0,
         })
         async with output_lock:
-            output_file.write(json.dumps(summary) + "\n")
-            output_file.flush()
+            summary_file.write(json.dumps(summary) + "\n")
+            summary_file.flush()
 
 
 def percentile(data: list, p: float) -> float:
@@ -429,6 +429,8 @@ async def main():
                         help="Stop the client after this many seconds and write a partial summary")
     parser.add_argument("--summary-interval", type=float, default=None,
                         help="Append cumulative interval summaries every N seconds")
+    parser.add_argument("--summary-output", default=None,
+                        help="Path to write interval summaries JSONL")
     parser.add_argument("--output", default="workload_metrics.jsonl",
                         help="Path to write per-round metrics JSONL and final summary")
     args = parser.parse_args()
@@ -464,10 +466,17 @@ async def main():
     timeout = aiohttp.ClientTimeout(total=args.timeout)
 
     out_path = args.output
+    summary_out_path = args.summary_output
     output_lock = asyncio.Lock()
+    summary_output_lock = asyncio.Lock()
     stop_reason = "completed"
 
     with open(out_path, "w") as output_file:
+        summary_file = (
+            open(summary_out_path, "w")
+            if args.summary_interval is not None and summary_out_path is not None
+            else output_file
+        )
         async with aiohttp.ClientSession(connector=connector, timeout=timeout) as http:
             endpoint = f"{args.base_url}/v1/chat/completions"
 
@@ -482,8 +491,10 @@ async def main():
                         len(sessions),
                         total_rounds,
                         args.summary_interval,
-                        output_file,
-                        output_lock,
+                        summary_file,
+                        summary_output_lock
+                        if summary_file is not output_file
+                        else output_lock,
                     )
                 )
                 if args.summary_interval is not None
@@ -529,6 +540,9 @@ async def main():
                         await summary_task
                     except asyncio.CancelledError:
                         pass
+
+        if summary_file is not output_file:
+            summary_file.close()
 
     summary = print_report(all_metrics, wall_time)
     summary.update({

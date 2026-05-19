@@ -91,7 +91,10 @@ if [[ -n "${MAX_DURATION}" ]]; then
 fi
 
 if [[ -n "${SUMMARY_INTERVAL}" ]]; then
-  CLIENT_ARGS+=(--summary-interval "${SUMMARY_INTERVAL}")
+  CLIENT_ARGS+=(
+    --summary-interval "${SUMMARY_INTERVAL}"
+    --summary-output "${RUN_DIR}/interval_summaries.jsonl"
+  )
 fi
 
 if [[ "${NO_IGNORE_EOS:-0}" == "1" ]]; then
