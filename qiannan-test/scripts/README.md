@@ -71,6 +71,27 @@ bash qiannan-test/scripts/router_E_dp2_cache_aware.sh
 
 Client target: `http://localhost:30000`
 
+## F. TP8 + DP4 DPA + cache-aware router
+
+This keeps the full 8-GPU TP world for dense/MoE layers while using attention
+DP=4 and attention TP=2. The server script defaults to compensated DPA values:
+effective `chunked-prefill-size=8192` and effective
+`schedule-conservativeness~=1.0`.
+
+Shell 1:
+
+```bash
+bash qiannan-test/scripts/serve_F_dpa_tp8_dp4.sh
+```
+
+Shell 2, after the server is healthy:
+
+```bash
+bash qiannan-test/scripts/router_F_dp4_cache_aware.sh
+```
+
+Client target: `http://localhost:30000`
+
 ## Common Overrides
 
 ```bash
@@ -100,6 +121,9 @@ bash qiannan-test/scripts/client_D_dpa_tp4_dp2_router.sh T6
 
 bash qiannan-test/scripts/client_E_dpa_tp8_dp2_router.sh T1
 bash qiannan-test/scripts/client_E_dpa_tp8_dp2_router.sh T6
+
+bash qiannan-test/scripts/client_F_dpa_tp8_dp4_router.sh T1
+bash qiannan-test/scripts/client_F_dpa_tp8_dp4_router.sh T6
 ```
 
 Each run writes:
@@ -128,4 +152,5 @@ These wrappers run `qiannan-test/bench/workload_data.jsonl` instead of T1/T6.
 bash qiannan-test/scripts/client_A_tp8_full.sh
 bash qiannan-test/scripts/client_B2_dpa_tp8_dp8_router_compensated_full.sh
 bash qiannan-test/scripts/client_E_dpa_tp8_dp2_router_full.sh
+bash qiannan-test/scripts/client_F_dpa_tp8_dp4_router_full.sh
 ```

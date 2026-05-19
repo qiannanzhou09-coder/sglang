@@ -53,3 +53,7 @@ esac
 if [[ -n "${SCHEDULE_CONSERVATIVENESS:-}" ]]; then
   COMMON_SGLANG_ARGS+=(--schedule-conservativeness "${SCHEDULE_CONSERVATIVENESS}")
 fi
+
+if [[ -n "${MAX_RUNNING_REQUESTS:-}" ]]; then
+  COMMON_SGLANG_ARGS+=(--max-running-requests "${MAX_RUNNING_REQUESTS}")
+fi
