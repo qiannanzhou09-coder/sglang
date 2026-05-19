@@ -302,6 +302,8 @@ async def main():
                         help="Sampling temperature")
     parser.add_argument("--timeout", type=int, default=1800,
                         help="Per-request timeout in seconds")
+    parser.add_argument("--output", default="workload_metrics.jsonl",
+                        help="Path to write per-round metrics JSONL and final summary")
     args = parser.parse_args()
 
     # Load workload
@@ -359,7 +361,7 @@ async def main():
     summary = print_report(all_metrics, wall_time)
 
     # Save detailed metrics + summary
-    out_path = "workload_metrics.jsonl"
+    out_path = args.output
     with open(out_path, "w") as f:
         for m in all_metrics:
             f.write(json.dumps({

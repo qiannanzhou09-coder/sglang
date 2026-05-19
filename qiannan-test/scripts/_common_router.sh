@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
+PS4='+ ${BASH_SOURCE}:${LINENO}: '
+set -x
 
 # Shared defaults for routing one DPA SGLang server through dp-aware cache_aware SMG.
 
@@ -14,4 +16,3 @@ WORKER_URLS=()
 for ((rank = 0; rank < DP_SIZE; rank++)); do
   WORKER_URLS+=("${WORKER_URL_BASE}@${rank}")
 done
-

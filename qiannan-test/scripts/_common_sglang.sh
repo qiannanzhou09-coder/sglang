@@ -1,12 +1,14 @@
 #!/usr/bin/env bash
 set -euo pipefail
+PS4='+ ${BASH_SOURCE}:${LINENO}: '
+set -x
 
 # Shared defaults for Qwen3.5-122B SGLang serving experiments.
 # Override any value from the shell, e.g. MODEL_PATH=/path/to/model bash serve_A_tp8.sh
 
 export SGLANG_ENABLE_SPEC_V2="${SGLANG_ENABLE_SPEC_V2:-1}"
 
-MODEL_PATH="${MODEL_PATH:-/inspire/hdd/global_public/public_models/Qwen/Qwen3.5-122B-A10B-FP8}"
+MODEL_PATH="${MODEL_PATH:-/home/Qwen3.5-122B-A10B}"
 HOST="${HOST:-0.0.0.0}"
 SGLANG_PORT="${SGLANG_PORT:-8000}"
 MEM_FRACTION_STATIC="${MEM_FRACTION_STATIC:-0.8}"
@@ -42,4 +44,3 @@ COMMON_SGLANG_ARGS=(
 if [[ -n "${SCHEDULE_CONSERVATIVENESS:-}" ]]; then
   COMMON_SGLANG_ARGS+=(--schedule-conservativeness "${SCHEDULE_CONSERVATIVENESS}")
 fi
-

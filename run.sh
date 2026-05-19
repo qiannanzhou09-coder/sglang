@@ -1,7 +1,11 @@
+#!/usr/bin/env bash
+set -euo pipefail
+PS4='+ ${BASH_SOURCE}:${LINENO}: '
+set -x
+
 export HF_HUB_OFFLINE=1
 export TRANSFORMERS_OFFLINE=1
-
-SGLANG_ENABLE_JIT_DEEPGEMM=0  python3 -m sglang.launch_server \
+python3 -m sglang.launch_server \
 --model-path /home/Qwen3.5-122B-A10B \
 --host 0.0.0.0 \
 --port 8000 \

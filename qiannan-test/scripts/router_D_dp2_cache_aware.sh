@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
+PS4='+ ${BASH_SOURCE}:${LINENO}: '
+set -x
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 DP_SIZE="${DP_SIZE:-2}"
@@ -14,4 +16,3 @@ python -m sglang_router.launch_router \
   --dp-aware \
   --host "${ROUTER_HOST}" \
   --port "${ROUTER_PORT}"
-

@@ -60,3 +60,38 @@ ROUTER_PORT=31000 SGLANG_PORT=8100 bash qiannan-test/scripts/router_B_dp8_cache_
 
 All server scripts enable `--enable-metrics` and `--enable-cache-report`.
 
+## Client Workload Scripts
+
+Run one fixture against the matching endpoint:
+
+```bash
+bash qiannan-test/scripts/client_A_tp8.sh T1
+bash qiannan-test/scripts/client_A_tp8.sh T6
+
+bash qiannan-test/scripts/client_B_dpa_tp8_dp8_router.sh T1
+bash qiannan-test/scripts/client_B_dpa_tp8_dp8_router.sh T6
+
+bash qiannan-test/scripts/client_C_dpa_tp8_dp8_no_router.sh T1
+bash qiannan-test/scripts/client_C_dpa_tp8_dp8_no_router.sh T6
+
+bash qiannan-test/scripts/client_D_dpa_tp4_dp2_router.sh T1
+bash qiannan-test/scripts/client_D_dpa_tp4_dp2_router.sh T6
+```
+
+Each run writes:
+
+```text
+qiannan-test/runs/<run_id>/
+  config.yaml
+  client_stdout.log
+  client_metrics.jsonl
+  summary.json
+```
+
+Useful quick-test overrides:
+
+```bash
+MAX_SESSIONS=2 bash qiannan-test/scripts/client_A_tp8.sh T1
+RUN_ID=A_t1_smoke bash qiannan-test/scripts/client_A_tp8.sh T1
+BASE_URL=http://localhost:31000 bash qiannan-test/scripts/client_B_dpa_tp8_dp8_router.sh T6
+```

@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
+PS4='+ ${BASH_SOURCE}:${LINENO}: '
+set -x
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "${SCRIPT_DIR}/_common_sglang.sh"
@@ -14,4 +16,3 @@ python -m sglang.launch_server \
   --tp-size 8 \
   --dp-size 8 \
   --enable-dp-attention
-
