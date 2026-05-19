@@ -7,6 +7,7 @@ and routes longer prompts through sglang_router cache_aware.
 """
 
 import argparse
+import asyncio
 import json
 import time
 import uuid
@@ -97,6 +98,10 @@ class ProxyState:
     def __init__(self, args: argparse.Namespace):
         self.args = args
         self.http: aiohttp.ClientSession | None = None
+        self.admission_semaphore: asyncio.Semaphore | None = None
+        self.admission_lock: asyncio.Lock | None = None
+        self.active_requests = 0
+        self.waiting_requests = 0
         self.metrics_file = None
         if args.metrics_path:
             path = Path(args.metrics_path)
@@ -107,6 +112,9 @@ class ProxyState:
         timeout = aiohttp.ClientTimeout(total=self.args.timeout)
         connector = aiohttp.TCPConnector(limit=0, limit_per_host=0)
         self.http = aiohttp.ClientSession(timeout=timeout, connector=connector)
+        self.admission_lock = asyncio.Lock()
+        if self.args.max_inflight_requests is not None:
+            self.admission_semaphore = asyncio.Semaphore(self.args.max_inflight_requests)
 
     async def close(self) -> None:
         if self.http is not None:
@@ -117,6 +125,50 @@ class ProxyState:
     def log(self, obj: dict[str, Any]) -> None:
         if self.metrics_file is not None:
             self.metrics_file.write(json.dumps(obj, ensure_ascii=False) + "\n")
+
+    async def acquire_admission(self) -> tuple[float, int, int]:
+        assert self.admission_lock is not None
+        wait_start = time.monotonic()
+        if self.admission_semaphore is None:
+            async with self.admission_lock:
+                self.active_requests += 1
+                return 0.0, self.active_requests, self.waiting_requests
+
+        waiting_added = False
+        acquired = False
+        admitted = False
+        try:
+            async with self.admission_lock:
+                self.waiting_requests += 1
+                waiting_added = True
+
+            await self.admission_semaphore.acquire()
+            acquired = True
+            queue_wait = time.monotonic() - wait_start
+
+            async with self.admission_lock:
+                self.waiting_requests -= 1
+                waiting_added = False
+                self.active_requests += 1
+                admitted = True
+                return queue_wait, self.active_requests, self.waiting_requests
+        except BaseException:
+            async with self.admission_lock:
+                if waiting_added:
+                    self.waiting_requests -= 1
+            if acquired and not admitted:
+                self.admission_semaphore.release()
+            raise
+
+    async def release_admission(self) -> tuple[int, int]:
+        assert self.admission_lock is not None
+        async with self.admission_lock:
+            self.active_requests = max(self.active_requests - 1, 0)
+            active_requests = self.active_requests
+            waiting_requests = self.waiting_requests
+        if self.admission_semaphore is not None:
+            self.admission_semaphore.release()
+        return active_requests, waiting_requests
 
 
 async def health(_: web.Request) -> web.Response:
@@ -154,7 +206,17 @@ async def proxy_handler(request: web.Request) -> web.StreamResponse:
 
     status = 502
     error = None
+    admitted = False
+    queue_wait = 0.0
+    active_requests_at_admit = 0
+    waiting_requests_at_admit = 0
+    active_requests_after_done = 0
+    waiting_requests_after_done = 0
     try:
+        queue_wait, active_requests_at_admit, waiting_requests_at_admit = (
+            await state.acquire_admission()
+        )
+        admitted = True
         async with state.http.request(
             request.method,
             target_url,
@@ -169,6 +231,13 @@ async def proxy_handler(request: web.Request) -> web.StreamResponse:
             )
             response.headers["x-proxy-target"] = target_kind
             response.headers["x-prompt-tokens-estimate"] = str(prompt_tokens_estimate)
+            response.headers["x-proxy-queue-wait"] = f"{queue_wait:.6f}"
+            response.headers["x-proxy-active-requests"] = str(active_requests_at_admit)
+            response.headers["x-proxy-waiting-requests"] = str(waiting_requests_at_admit)
+            if state.args.max_inflight_requests is not None:
+                response.headers["x-proxy-max-inflight-requests"] = str(
+                    state.args.max_inflight_requests
+                )
             await response.prepare(request)
             async for chunk in upstream.content.iter_chunked(65536):
                 await response.write(chunk)
@@ -178,6 +247,10 @@ async def proxy_handler(request: web.Request) -> web.StreamResponse:
         error = str(exc)
         return web.json_response({"error": error}, status=502)
     finally:
+        if admitted:
+            active_requests_after_done, waiting_requests_after_done = (
+                await state.release_admission()
+            )
         state.log({
             "type": "request",
             "t": round(time.time(), 6),
@@ -189,6 +262,12 @@ async def proxy_handler(request: web.Request) -> web.StreamResponse:
             "prompt_tokens_estimate": prompt_tokens_estimate,
             "status": status,
             "latency": round(time.monotonic() - started, 6),
+            "queue_wait": round(queue_wait, 6),
+            "active_requests_at_admit": active_requests_at_admit,
+            "waiting_requests_at_admit": waiting_requests_at_admit,
+            "active_requests_after_done": active_requests_after_done,
+            "waiting_requests_after_done": waiting_requests_after_done,
+            "max_inflight_requests": state.args.max_inflight_requests,
             "error": error,
         })
 
@@ -241,7 +320,16 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--timeout", type=int, default=1800)
     parser.add_argument("--metrics-path", default="")
     parser.add_argument("--client-max-size", type=int, default=512 * 1024 * 1024)
-    return parser.parse_args()
+    parser.add_argument(
+        "--max-inflight-requests",
+        type=int,
+        default=None,
+        help="Request-level admission window. Requests above this limit wait in proxy.",
+    )
+    args = parser.parse_args()
+    if args.max_inflight_requests is not None and args.max_inflight_requests <= 0:
+        parser.error("--max-inflight-requests must be positive")
+    return args
 
 
 def main() -> None:
