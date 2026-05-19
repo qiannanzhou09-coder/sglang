@@ -4,6 +4,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import shutil
 import signal
 import socket
 import subprocess
@@ -24,6 +25,7 @@ SERVER_PYTHON_BIN = os.environ.get("SERVER_PYTHON_BIN", os.environ.get("PYTHON_B
 ROUTER_PYTHON_BIN = os.environ.get("ROUTER_PYTHON_BIN", os.environ.get("PYTHON_BIN", "python"))
 PROXY_PYTHON_BIN = os.environ.get("PROXY_PYTHON_BIN", "python3")
 CLIENT_PYTHON_BIN = os.environ.get("CLIENT_PYTHON_BIN", "python3")
+CLEANUP_GRACE_SECONDS = float(os.environ.get("BENCH_CLEANUP_GRACE_SECONDS", "10"))
 
 
 def load_json(path: Path) -> dict[str, Any]:
@@ -106,6 +108,14 @@ def resolved_model_path(model: dict[str, Any]) -> str:
 def append_pair(cmd: list[str], flag: str, value: Any) -> None:
     if value is not None:
         cmd.extend([flag, str(value)])
+
+
+def path_is_relative_to(path: Path, parent: Path) -> bool:
+    try:
+        path.relative_to(parent)
+        return True
+    except ValueError:
+        return False
 
 
 def server_command(case: dict[str, Any]) -> tuple[list[str], dict[str, str]]:
@@ -234,7 +244,7 @@ def is_port_open(port: int, host: str = "127.0.0.1") -> bool:
         return sock.connect_ex((host, port)) == 0
 
 
-def ensure_ports_free(case: dict[str, Any]) -> None:
+def required_ports(case: dict[str, Any]) -> list[tuple[str, int]]:
     checks = [("server", case["server"]["port"])]
     router = case.get("router", {})
     if router.get("enabled"):
@@ -243,6 +253,11 @@ def ensure_ports_free(case: dict[str, Any]) -> None:
     proxy = case.get("proxy", {})
     if proxy.get("enabled"):
         checks.append(("proxy", proxy["port"]))
+    return [(name, int(port)) for name, port in checks]
+
+
+def ensure_ports_free(case: dict[str, Any]) -> None:
+    checks = required_ports(case)
 
     busy = [(name, port) for name, port in checks if is_port_open(int(port))]
     if busy:
@@ -251,6 +266,245 @@ def ensure_ports_free(case: dict[str, Any]) -> None:
             "Required port is already in use. Stop the old process or choose another port.\n"
             f"{detail}"
         )
+
+
+def run_probe(cmd: list[str]) -> subprocess.CompletedProcess[str]:
+    return subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+
+
+def parse_pid_lines(output: str) -> set[int]:
+    pids: set[int] = set()
+    for token in output.replace(",", " ").split():
+        if token.isdigit():
+            pids.add(int(token))
+    return pids
+
+
+def pids_for_port(port: int) -> set[int]:
+    lsof = shutil.which("lsof")
+    if lsof is not None:
+        result = run_probe([lsof, f"-tiTCP:{port}", "-sTCP:LISTEN"])
+        if result.returncode == 0:
+            return parse_pid_lines(result.stdout)
+
+    fuser = shutil.which("fuser")
+    if fuser is not None:
+        result = run_probe([fuser, "-n", "tcp", str(port)])
+        if result.returncode == 0:
+            return parse_pid_lines(result.stdout)
+
+    return set()
+
+
+def pid_exists(pid: int) -> bool:
+    try:
+        os.kill(pid, 0)
+        return True
+    except ProcessLookupError:
+        return False
+    except PermissionError:
+        return True
+
+
+def pid_is_current_user(pid: int) -> bool:
+    proc_path = Path("/proc") / str(pid)
+    if not proc_path.exists() or not hasattr(os, "getuid"):
+        return True
+    try:
+        return proc_path.stat().st_uid == os.getuid()
+    except FileNotFoundError:
+        return False
+    except OSError:
+        return True
+
+
+def read_pid_cmdline(pid: int) -> str:
+    cmdline_path = Path("/proc") / str(pid) / "cmdline"
+    try:
+        data = cmdline_path.read_bytes()
+        if data:
+            return " ".join(part.decode(errors="replace") for part in data.split(b"\0") if part)
+    except OSError:
+        pass
+
+    ps = shutil.which("ps")
+    if ps is None:
+        return ""
+    result = run_probe([ps, "-p", str(pid), "-o", "command="])
+    if result.returncode == 0:
+        return result.stdout.strip()
+    return ""
+
+
+def read_pid_cwd(pid: int) -> Path | None:
+    try:
+        return Path(os.readlink(Path("/proc") / str(pid) / "cwd")).resolve()
+    except OSError:
+        return None
+
+
+def describe_pid(pid: int) -> str:
+    cmdline = read_pid_cmdline(pid)
+    if cmdline:
+        return cmdline
+    return f"pid={pid}"
+
+
+def benchmark_related_pid(pid: int) -> bool:
+    cmdline = read_pid_cmdline(pid)
+    markers = (
+        str(REPO_ROOT),
+        "sglang.launch_server",
+        "sglang_router.launch_router",
+        "run_benchmark.py",
+        "run_workload.py",
+    )
+    if any(marker in cmdline for marker in markers):
+        return True
+
+    cwd = read_pid_cwd(pid)
+    return cwd is not None and path_is_relative_to(cwd, REPO_ROOT)
+
+
+def wait_for_pids_to_exit(pids: set[int], timeout_s: float) -> set[int]:
+    deadline = time.time() + timeout_s
+    remaining = {pid for pid in pids if pid_exists(pid)}
+    while remaining and time.time() < deadline:
+        time.sleep(0.2)
+        remaining = {pid for pid in remaining if pid_exists(pid)}
+    return remaining
+
+
+def kill_pids(pids: set[int], reason: str) -> None:
+    current_pid = os.getpid()
+    current_pgid = os.getpgrp()
+    targets = {
+        pid
+        for pid in pids
+        if pid != current_pid and pid_exists(pid) and pid_is_current_user(pid)
+    }
+    if not targets:
+        return
+
+    pgids: set[int] = set()
+    direct_pids: set[int] = set()
+    for pid in sorted(targets):
+        try:
+            pgid = os.getpgid(pid)
+        except OSError:
+            continue
+        if pgid == current_pgid:
+            direct_pids.add(pid)
+        else:
+            pgids.add(pgid)
+
+    for pid in sorted(targets):
+        print(f"[bench] cleanup: killing {reason}: pid={pid} cmd={describe_pid(pid)}", flush=True)
+
+    for pgid in sorted(pgids):
+        try:
+            os.killpg(pgid, signal.SIGTERM)
+        except ProcessLookupError:
+            pass
+        except PermissionError:
+            direct_pids.update(pid for pid in targets if pid_exists(pid))
+
+    for pid in sorted(direct_pids):
+        try:
+            os.kill(pid, signal.SIGTERM)
+        except ProcessLookupError:
+            pass
+
+    remaining = wait_for_pids_to_exit(targets, CLEANUP_GRACE_SECONDS)
+    if not remaining:
+        return
+
+    remaining_pgids: set[int] = set()
+    for pid in sorted(remaining):
+        if not pid_exists(pid):
+            continue
+        try:
+            pgid = os.getpgid(pid)
+        except OSError:
+            continue
+        if pgid != current_pgid:
+            remaining_pgids.add(pgid)
+
+    for pgid in sorted(remaining_pgids):
+        try:
+            os.killpg(pgid, signal.SIGKILL)
+        except ProcessLookupError:
+            pass
+        except PermissionError:
+            pass
+
+    for pid in sorted(remaining):
+        if not pid_exists(pid):
+            continue
+        try:
+            os.kill(pid, signal.SIGKILL)
+        except ProcessLookupError:
+            pass
+        except PermissionError:
+            print(f"[bench] cleanup: cannot kill pid={pid}; permission denied", flush=True)
+
+
+def cleanup_port_processes(case: dict[str, Any]) -> None:
+    for name, port in required_ports(case):
+        pids = pids_for_port(port)
+        if pids:
+            kill_pids(pids, f"{name} port 127.0.0.1:{port}")
+
+
+def gpu_process_pids() -> set[int]:
+    nvidia_smi = shutil.which("nvidia-smi")
+    if nvidia_smi is None:
+        return set()
+
+    result = run_probe(
+        [
+            nvidia_smi,
+            "--query-compute-apps=pid,process_name,used_memory",
+            "--format=csv,noheader,nounits",
+        ]
+    )
+    if result.returncode != 0:
+        return set()
+
+    pids: set[int] = set()
+    for line in result.stdout.splitlines():
+        first = line.split(",", 1)[0].strip()
+        if first.isdigit():
+            pids.add(int(first))
+    return pids
+
+
+def cleanup_gpu_processes() -> None:
+    pids = gpu_process_pids()
+    if not pids:
+        return
+
+    if os.environ.get("BENCH_KILL_ALL_GPU_PROCESSES") == "1":
+        targets = {pid for pid in pids if pid_is_current_user(pid)}
+    else:
+        targets = {
+            pid
+            for pid in pids
+            if pid_is_current_user(pid) and benchmark_related_pid(pid)
+        }
+
+    if targets:
+        kill_pids(targets, "stale GPU process")
+
+
+def cleanup_before_run(case: dict[str, Any]) -> None:
+    if os.environ.get("BENCH_SKIP_PRE_RUN_CLEANUP") == "1":
+        ensure_ports_free(case)
+        return
+
+    cleanup_port_processes(case)
+    cleanup_gpu_processes()
+    ensure_ports_free(case)
 
 
 def client_base_url(case: dict[str, Any]) -> str:
@@ -466,7 +720,7 @@ def run_case(case_id: str, output_root: Path) -> None:
     print(f"[bench] {case.get('description', '')}", flush=True)
     print(f"[bench] output: {run_dir}", flush=True)
 
-    ensure_ports_free(case)
+    cleanup_before_run(case)
 
     server_cmd, server_env = server_command(case)
     router_cmd = router_command(case) if case.get("router", {}).get("enabled") else None

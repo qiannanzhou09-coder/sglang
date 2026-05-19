@@ -27,7 +27,7 @@
     "enable_mixed_chunk": true,
     "hicache": {
       "enabled": true,
-      "ratio": "2",
+      "ratio": "1.72",
       "io_backend": "kernel",
       "storage_prefetch_policy": "wait_complete",
       "write_policy": "write_through"
