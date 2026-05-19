@@ -7,9 +7,6 @@
       "kind": "pruned",
       "env": "PRUNED_MODEL_PATH",
       "default_path": "/home/qwen3.5-pruned-models/Qwen3.5-122B-A10B-REAP-20-text-only"
-    },
-    "hicache": {
-      "ratio": "4"
     }
   },
   "router": {
