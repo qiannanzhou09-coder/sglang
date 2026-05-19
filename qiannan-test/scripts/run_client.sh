@@ -23,6 +23,7 @@ TIMEOUT="${TIMEOUT:-1800}"
 TEMPERATURE="${TEMPERATURE:-0.7}"
 MAX_DURATION="${MAX_DURATION:-}"
 SUMMARY_INTERVAL="${SUMMARY_INTERVAL:-}"
+MAX_ACTIVE_SESSIONS="${MAX_ACTIVE_SESSIONS:-}"
 
 case "${FIXTURE_ARG}" in
   T1|t1)
@@ -62,6 +63,7 @@ base_url: ${BASE_URL}
 model: ${MODEL}
 timeout: ${TIMEOUT}
 temperature: ${TEMPERATURE}
+max_active_sessions: ${MAX_ACTIVE_SESSIONS:-null}
 max_duration: ${MAX_DURATION:-null}
 summary_interval: ${SUMMARY_INTERVAL:-null}
 EOF
@@ -84,6 +86,10 @@ CLIENT_ARGS=(
 
 if [[ -n "${MAX_SESSIONS:-}" ]]; then
   CLIENT_ARGS+=(--max-sessions "${MAX_SESSIONS}")
+fi
+
+if [[ -n "${MAX_ACTIVE_SESSIONS}" ]]; then
+  CLIENT_ARGS+=(--max-active-sessions "${MAX_ACTIVE_SESSIONS}")
 fi
 
 if [[ -n "${MAX_DURATION}" ]]; then

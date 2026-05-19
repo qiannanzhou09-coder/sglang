@@ -251,6 +251,48 @@ async def run_session(
     progress["sessions"] += 1
 
 
+async def run_session_admitted(
+    session_data: dict,
+    endpoint: str,
+    http: aiohttp.ClientSession,
+    metrics: list,
+    progress: dict,
+    ignore_eos: bool,
+    temperature: float,
+    model: str,
+    output_file=None,
+    output_lock: Optional[asyncio.Lock] = None,
+    admission_semaphore: Optional[asyncio.Semaphore] = None,
+):
+    """Run one session after admission, counting the whole session as active."""
+
+    async def _run() -> None:
+        progress["started_sessions"] += 1
+        progress["active_sessions"] += 1
+        try:
+            await run_session(
+                session_data,
+                endpoint,
+                http,
+                metrics,
+                progress,
+                ignore_eos=ignore_eos,
+                temperature=temperature,
+                model=model,
+                output_file=output_file,
+                output_lock=output_lock,
+            )
+        finally:
+            progress["active_sessions"] -= 1
+
+    if admission_semaphore is None:
+        await _run()
+        return
+
+    async with admission_semaphore:
+        await _run()
+
+
 async def progress_reporter(progress: dict, total_sessions: int, total_rounds: int):
     """Print progress every 10 seconds."""
     while progress["sessions"] < total_sessions:
@@ -259,6 +301,8 @@ async def progress_reporter(progress: dict, total_sessions: int, total_rounds: i
         print(
             f"  [{elapsed:7.1f}s] "
             f"sessions {progress['sessions']}/{total_sessions} | "
+            f"active {progress['active_sessions']} | "
+            f"started {progress['started_sessions']}/{total_sessions} | "
             f"rounds {progress['rounds']}/{total_rounds} | "
             f"failed {progress['failed']}",
             flush=True,
@@ -287,6 +331,9 @@ async def summary_reporter(
             "interval_secs": interval_secs,
             "elapsed_secs": round(elapsed, 2),
             "loaded_sessions": total_sessions,
+            "started_sessions": progress.get("started_sessions", 0),
+            "active_sessions": progress.get("active_sessions", 0),
+            "max_active_sessions": progress.get("max_active_sessions"),
             "completed_sessions": progress["sessions"],
             "planned_rounds": total_rounds,
             "completion_ratio": round(progress["rounds"] / total_rounds, 6)
@@ -419,6 +466,8 @@ async def main():
                         help="Model name for API requests")
     parser.add_argument("--max-sessions", type=int, default=None,
                         help="Limit total sessions (for quick tests)")
+    parser.add_argument("--max-active-sessions", type=int, default=None,
+                        help="Limit concurrently admitted sessions; queued sessions start after an active session finishes")
     parser.add_argument("--no-ignore-eos", action="store_true",
                         help="Don't force ignore_eos (output may be shorter than requested)")
     parser.add_argument("--temperature", type=float, default=0.7,
@@ -434,6 +483,8 @@ async def main():
     parser.add_argument("--output", default="workload_metrics.jsonl",
                         help="Path to write per-round metrics JSONL and final summary")
     args = parser.parse_args()
+    if args.max_active_sessions is not None and args.max_active_sessions <= 0:
+        parser.error("--max-active-sessions must be positive")
 
     # Load workload
     sessions = []
@@ -453,6 +504,8 @@ async def main():
     print(f"Expected tokens: {total_input:,} in / {total_output:,} out")
     print(f"Target: {args.base_url}")
     print(f"ignore_eos: {not args.no_ignore_eos}")
+    if args.max_active_sessions is not None:
+        print(f"Max active sessions: {args.max_active_sessions}")
     if args.max_duration is not None:
         print(f"Max duration: {args.max_duration:g}s")
     if args.summary_interval is not None:
@@ -460,7 +513,15 @@ async def main():
     print()
 
     all_metrics: list[RoundMetric] = []
-    progress = {"sessions": 0, "rounds": 0, "failed": 0, "t0": time.monotonic()}
+    progress = {
+        "sessions": 0,
+        "started_sessions": 0,
+        "active_sessions": 0,
+        "max_active_sessions": args.max_active_sessions,
+        "rounds": 0,
+        "failed": 0,
+        "t0": time.monotonic(),
+    }
 
     connector = aiohttp.TCPConnector(limit=0, limit_per_host=0)
     timeout = aiohttp.ClientTimeout(total=args.timeout)
@@ -502,15 +563,21 @@ async def main():
             )
 
             wall_start = time.monotonic()
+            admission_semaphore = (
+                asyncio.Semaphore(args.max_active_sessions)
+                if args.max_active_sessions is not None
+                else None
+            )
             tasks = [
                 asyncio.create_task(
-                    run_session(
+                    run_session_admitted(
                         s, endpoint, http, all_metrics, progress,
                         ignore_eos=not args.no_ignore_eos,
                         temperature=args.temperature,
                         model=args.model,
                         output_file=output_file,
                         output_lock=output_lock,
+                        admission_semaphore=admission_semaphore,
                     )
                 )
                 for s in sessions
@@ -548,6 +615,9 @@ async def main():
     summary.update({
         "stop_reason": stop_reason,
         "loaded_sessions": len(sessions),
+        "started_sessions": progress["started_sessions"],
+        "active_sessions": progress["active_sessions"],
+        "max_active_sessions": args.max_active_sessions,
         "completed_sessions": progress["sessions"],
         "planned_rounds": total_rounds,
         "completion_ratio": round(progress["rounds"] / total_rounds, 6)
