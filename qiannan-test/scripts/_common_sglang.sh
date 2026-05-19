@@ -6,9 +6,13 @@ set -x
 # Shared defaults for Qwen3.5-122B SGLang serving experiments.
 # Override any value from the shell, e.g. MODEL_PATH=/path/to/model bash serve_A_tp8.sh
 
+COMMON_SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
 export SGLANG_ENABLE_SPEC_V2="${SGLANG_ENABLE_SPEC_V2:-1}"
 
-MODEL_PATH="${MODEL_PATH:-/home/Qwen3.5-122B-A10B}"
+BASE_MODEL_PATH="${BASE_MODEL_PATH:-/home/Qwen3.5-122B-A10B}"
+MODEL_PATH="${MODEL_PATH:-${BASE_MODEL_PATH}}"
+PRUNE_MODE="${PRUNE_MODE:-none}"
 HOST="${HOST:-0.0.0.0}"
 SGLANG_PORT="${SGLANG_PORT:-8000}"
 MEM_FRACTION_STATIC="${MEM_FRACTION_STATIC:-0.8}"
@@ -21,6 +25,28 @@ SPECULATIVE_EAGLE_TOPK="${SPECULATIVE_EAGLE_TOPK:-1}"
 SPECULATIVE_NUM_DRAFT_TOKENS="${SPECULATIVE_NUM_DRAFT_TOKENS:-4}"
 MAMBA_SCHEDULER_STRATEGY="${MAMBA_SCHEDULER_STRATEGY:-extra_buffer}"
 MIXED_CHUNK="${MIXED_CHUNK:-1}"
+
+case "${PRUNE_MODE}" in
+  ""|none|NONE|None|off|OFF|Off|0|false|FALSE|False)
+    PRUNE_MODE="none"
+    ;;
+  *)
+    MODEL_PATH="$(
+      PRUNE_MODE="${PRUNE_MODE}" \
+      BASE_MODEL_PATH="${BASE_MODEL_PATH}" \
+      PRUNE_SOURCE_MODEL_PATH="${PRUNE_SOURCE_MODEL_PATH:-}" \
+      PRUNE_PLAN_PATH="${PRUNE_PLAN_PATH:-}" \
+      PRUNED_MODEL_ROOT="${PRUNED_MODEL_ROOT:-}" \
+      PRUNED_MODEL_PATH="${PRUNED_MODEL_PATH:-}" \
+      PRUNE_WORKERS="${PRUNE_WORKERS:-}" \
+      PRUNE_MTP_POLICY="${PRUNE_MTP_POLICY:-}" \
+      FORCE_REBUILD_PRUNED_MODEL="${FORCE_REBUILD_PRUNED_MODEL:-}" \
+      PYTHON_BIN="${PYTHON_BIN:-}" \
+      PRUNE_TOOL_PATH="${PRUNE_TOOL_PATH:-}" \
+      "${COMMON_SCRIPT_DIR}/prepare_pruned_model.sh"
+    )"
+    ;;
+esac
 
 COMMON_SGLANG_ARGS=(
   --model-path "${MODEL_PATH}"

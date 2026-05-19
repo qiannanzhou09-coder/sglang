@@ -102,6 +102,39 @@ ROUTER_PORT=31000 SGLANG_PORT=8100 bash qiannan-test/scripts/router_B_dp8_cache_
 
 All server scripts enable `--enable-metrics` and `--enable-cache-report`.
 
+## Startup-Time Pruning
+
+All server scripts source `_common_sglang.sh`, so they can prepare and serve a
+pruned checkpoint before launching SGLang:
+
+```bash
+PRUNE_MODE=strip_visual bash qiannan-test/scripts/serve_A_tp8.sh
+PRUNE_MODE=reap bash qiannan-test/scripts/serve_A_tp8.sh
+PRUNE_MODE=reap_text_only bash qiannan-test/scripts/serve_A_tp8.sh
+```
+
+Defaults:
+
+```text
+BASE_MODEL_PATH=/home/Qwen3.5-122B-A10B
+PRUNE_PLAN_PATH=qiannan-test/document/targeted_refusal_analysis.json
+PRUNED_MODEL_ROOT=/home/qwen3.5-pruned-models
+```
+
+Supported `PRUNE_MODE` values:
+
+```text
+none            Serve BASE_MODEL_PATH directly.
+strip_visual    Drop model.visual.* and vision config fields.
+reap            Apply the REAP expert plan.
+reap_text_only  Apply REAP and drop visual weights.
+```
+
+The pruned checkpoint is reused if it already exists. Set
+`FORCE_REBUILD_PRUNED_MODEL=1` to rebuild it. When `PRUNE_MODE` is set, use
+`BASE_MODEL_PATH` for the source checkpoint and `PRUNED_MODEL_PATH` only when
+you want to force a specific output checkpoint directory.
+
 ## Client Workload Scripts
 
 Run one fixture against the matching endpoint:
