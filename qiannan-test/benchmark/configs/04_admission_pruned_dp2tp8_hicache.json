@@ -1,6 +1,6 @@
 {
-  "id": "04_admission_pruned_dp2tp8_hicache_ratio4",
-  "description": "Case 02 active-session admission with the pruned model and HiCache ratio changed from 2 to 4.",
+  "id": "04_admission_pruned_dp2tp8_hicache",
+  "description": "Case 02 active-session admission with the pruned model. HiCache settings inherit the stage2_hicache profile, including hicache.ratio=1.72.",
   "profile": "stage2_hicache",
   "server": {
     "model": {

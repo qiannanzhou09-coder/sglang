@@ -1,0 +1,27 @@
+{
+  "id": "09_loss_base_dp2tp8_hicache",
+  "description": "Loss-only scoring for the base model on fixed pruned generations.",
+  "profile": "stage2_hicache",
+  "server": {
+    "mem_fraction_static": "0.70",
+    "context_length": "8192",
+    "chunked_prefill_size": "8192",
+    "max_running_requests": "32",
+    "prefill_max_requests": "4"
+  },
+  "router": {
+    "enabled": false
+  },
+  "proxy": {
+    "enabled": false
+  },
+  "client": {
+    "enabled": false
+  },
+  "loss": {
+    "enabled": true,
+    "label": "base",
+    "per_domain": 20,
+    "concurrency": 16
+  }
+}

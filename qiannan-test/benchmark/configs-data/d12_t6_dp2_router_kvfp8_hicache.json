@@ -1,0 +1,19 @@
+{
+  "id": "d12_t6_dp2_router_kvfp8_hicache",
+  "description": "T6 fixture on DP2 TP8 with cache-aware router, HiCache, and FP8 KV cache.",
+  "profile": "stage2_hicache",
+  "server": {
+    "kv_cache_dtype": "fp8_e4m3"
+  },
+  "client": {
+    "data_path": "qiannan-test/fixtures/T6_official_50.jsonl",
+    "summary_interval": 30
+  },
+  "samplers": {
+    "loads": {
+      "enabled": true,
+      "interval": 5,
+      "include": "all"
+    }
+  }
+}

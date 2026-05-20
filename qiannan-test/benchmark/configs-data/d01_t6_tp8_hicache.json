@@ -1,0 +1,26 @@
+{
+  "id": "d01_t6_tp8_hicache",
+  "description": "T6 fixture on pure TP8 with the stage2 HiCache settings.",
+  "profile": "stage2_hicache",
+  "server": {
+    "dp_size": null,
+    "enable_dp_attention": false
+  },
+  "router": {
+    "enabled": false
+  },
+  "proxy": {
+    "enabled": false
+  },
+  "client": {
+    "data_path": "qiannan-test/fixtures/T6_official_50.jsonl",
+    "summary_interval": 30
+  },
+  "samplers": {
+    "loads": {
+      "enabled": true,
+      "interval": 5,
+      "include": "all"
+    }
+  }
+}

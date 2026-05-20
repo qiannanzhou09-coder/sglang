@@ -1,0 +1,21 @@
+{
+  "id": "d10_memory_base_dp2tp8_hicache",
+  "description": "Server-ready memory sample for the base model with DP2 TP8 and stage2 HiCache settings.",
+  "profile": "stage2_hicache",
+  "router": {
+    "enabled": false
+  },
+  "proxy": {
+    "enabled": false
+  },
+  "client": {
+    "enabled": false
+  },
+  "samplers": {
+    "loads": {
+      "enabled": true,
+      "interval": 5,
+      "include": "all"
+    }
+  }
+}

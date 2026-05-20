@@ -1,0 +1,19 @@
+{
+  "id": "d08_t6_dp2_router_mem092_hicache",
+  "description": "T6 fixture on DP2 TP8 with mem_fraction_static=0.92.",
+  "profile": "stage2_hicache",
+  "server": {
+    "mem_fraction_static": "0.92"
+  },
+  "client": {
+    "data_path": "qiannan-test/fixtures/T6_official_50.jsonl",
+    "summary_interval": 30
+  },
+  "samplers": {
+    "loads": {
+      "enabled": true,
+      "interval": 5,
+      "include": "all"
+    }
+  }
+}

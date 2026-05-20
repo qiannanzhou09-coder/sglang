@@ -1,0 +1,36 @@
+{
+  "type": "summary",
+  "wall_time": 28602.11,
+  "successful_rounds": 30876,
+  "failed_rounds": 139,
+  "total_sessions": 500,
+  "avg_session_time": 19610.1349,
+  "total_input_tokens": 58572970,
+  "total_prompt_tokens": 1789257828,
+  "total_cached_tokens": 922650504,
+  "total_uncached_prompt_tokens": 866607324,
+  "cache_hit_rate": 0.515661,
+  "total_output_tokens": 6578384,
+  "output_throughput_tok_s": 230.0,
+  "request_throughput_req_s": 1.08,
+  "ttft": {
+    "avg": 207.6768,
+    "p50": 18.071,
+    "p90": 439.6443,
+    "p99": 1163.5098
+  },
+  "round_latency": {
+    "avg": 284.7449,
+    "p50": 197.0911,
+    "p90": 530.2425,
+    "p99": 1314.611
+  },
+  "stop_reason": "completed",
+  "loaded_sessions": 500,
+  "completed_sessions": 500,
+  "planned_rounds": 36550,
+  "completion_ratio": 0.844761,
+  "run_id": "01_dp2tp8_hicache",
+  "config": "01_dp2tp8_hicache",
+  "base_url": "http://127.0.0.1:30000"
+}

@@ -4,11 +4,13 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import re
 import shutil
 import signal
 import socket
 import subprocess
 import sys
+import threading
 import time
 import urllib.error
 import urllib.request
@@ -45,16 +47,24 @@ def deep_merge(base: dict[str, Any], override: dict[str, Any]) -> dict[str, Any]
     return result
 
 
-def case_files() -> list[Path]:
-    return sorted(CONFIG_DIR.glob("*.json"))
+def default_config_dir() -> Path:
+    return Path(os.environ.get("BENCH_CONFIG_DIR", str(CONFIG_DIR)))
 
 
-def case_ids() -> list[str]:
-    return [path.stem for path in case_files()]
+def default_output_root() -> Path:
+    return Path(os.environ.get("BENCH_OUTPUT_ROOT", str(TEST_ROOT / "benchmark_runs")))
 
 
-def load_case(case_id: str) -> dict[str, Any]:
-    path = CONFIG_DIR / f"{case_id}.json"
+def case_files(config_dir: Path) -> list[Path]:
+    return sorted(config_dir.glob("*.json"))
+
+
+def case_ids(config_dir: Path) -> list[str]:
+    return [path.stem for path in case_files(config_dir)]
+
+
+def load_case(case_id: str, config_dir: Path) -> dict[str, Any]:
+    path = config_dir / f"{case_id}.json"
     if not path.exists():
         raise SystemExit(f"Unknown case '{case_id}'. Use 'list' to see valid cases.")
 
@@ -75,7 +85,11 @@ def load_case(case_id: str) -> dict[str, Any]:
 
 
 def case_order(case: dict[str, Any]) -> int:
-    return int(case["id"].split("_", 1)[0])
+    prefix = case["id"].split("_", 1)[0]
+    match = re.search(r"\d+", prefix)
+    if match is None:
+        raise ValueError(f"case id must contain an ordering number: {case['id']}")
+    return int(match.group(0))
 
 
 def normalize_case(case: dict[str, Any]) -> dict[str, Any]:
@@ -146,6 +160,9 @@ def server_command(case: dict[str, Any]) -> tuple[list[str], dict[str, str]]:
     append_pair(cmd, "--tool-call-parser", server.get("tool_call_parser"))
     append_pair(cmd, "--mamba-scheduler-strategy", server.get("mamba_scheduler_strategy"))
     append_pair(cmd, "--chunked-prefill-size", server.get("chunked_prefill_size"))
+    append_pair(cmd, "--max-running-requests", server.get("max_running_requests"))
+    append_pair(cmd, "--max-prefill-tokens", server.get("max_prefill_tokens"))
+    append_pair(cmd, "--prefill-max-requests", server.get("prefill_max_requests"))
     append_pair(cmd, "--schedule-policy", server.get("schedule_policy"))
 
     if server.get("enable_cache_report"):
@@ -527,6 +544,18 @@ def client_base_url(case: dict[str, Any]) -> str:
     return f"http://127.0.0.1:{case['server']['port']}"
 
 
+def direct_server_base_url(case: dict[str, Any]) -> str:
+    return f"http://127.0.0.1:{case['server']['port']}"
+
+
+def client_enabled(case: dict[str, Any]) -> bool:
+    return case.get("client", {}).get("enabled", True)
+
+
+def loss_enabled(case: dict[str, Any]) -> bool:
+    return case.get("loss", {}).get("enabled", False)
+
+
 def workload_command(case: dict[str, Any], run_dir: Path) -> list[str]:
     client = case["client"]
     cmd = [
@@ -551,6 +580,195 @@ def workload_command(case: dict[str, Any], run_dir: Path) -> list[str]:
     if os.environ.get("NO_IGNORE_EOS") == "1":
         cmd.append("--no-ignore-eos")
     return cmd
+
+
+def loss_base_url(case: dict[str, Any]) -> str:
+    mode = case.get("loss", {}).get("base_url_mode", "direct")
+    if mode == "direct":
+        return direct_server_base_url(case)
+    if mode == "client":
+        return client_base_url(case)
+    raise ValueError(f"unknown loss.base_url_mode: {mode}")
+
+
+def loss_command(case: dict[str, Any], run_dir: Path) -> list[str]:
+    loss = case["loss"]
+    cmd = [
+        CLIENT_PYTHON_BIN,
+        str(BENCHMARK_DIR / "run_loss.py"),
+        "--data",
+        str(repo_path(loss["data_path"])),
+        "--base-url",
+        loss_base_url(case),
+        "--output",
+        str(run_dir / loss.get("output", "loss_metrics.jsonl")),
+        "--summary-output",
+        str(run_dir / loss.get("summary_output", "loss_summary.json")),
+        "--label",
+        str(loss.get("label", case["id"])),
+        "--concurrency",
+        str(loss.get("concurrency", 16)),
+        "--timeout",
+        str(loss.get("timeout", 900)),
+        "--retries",
+        str(loss.get("retries", 3)),
+    ]
+
+    append_pair(cmd, "--limit", loss.get("limit"))
+    append_pair(cmd, "--per-domain", loss.get("per_domain"))
+    domains = loss.get("domains")
+    if isinstance(domains, list):
+        domains = ",".join(str(x) for x in domains)
+    append_pair(cmd, "--domains", domains)
+    append_pair(cmd, "--bootstrap-samples", loss.get("bootstrap_samples"))
+    append_pair(cmd, "--seed", loss.get("seed"))
+    if loss.get("allow_errors"):
+        cmd.append("--allow-errors")
+    return cmd
+
+
+def loads_sampler_config(case: dict[str, Any], run_dir: Path) -> dict[str, Any] | None:
+    configured = case.get("samplers", {}).get("loads", {})
+    if not isinstance(configured, dict):
+        configured = {}
+
+    enabled = bool(configured.get("enabled", False))
+    if os.environ.get("BENCH_SAMPLE_LOADS") == "1":
+        enabled = True
+    if not enabled:
+        return None
+
+    include = configured.get("include", "all")
+    if isinstance(include, list):
+        include = ",".join(str(item) for item in include)
+
+    interval = float(
+        os.environ.get("BENCH_LOAD_SAMPLE_INTERVAL", configured.get("interval", 5.0))
+    )
+    timeout = float(configured.get("timeout", 2.0))
+    output = configured.get("output", "load_metrics.jsonl")
+    url = f"{direct_server_base_url(case).rstrip('/')}/v1/loads?include={include}"
+    return {
+        "enabled": True,
+        "url": url,
+        "interval": interval,
+        "timeout": timeout,
+        "output": str(run_dir / output),
+        "include": include,
+    }
+
+
+class LoadMetricsSampler:
+    def __init__(self, case_id: str, config: dict[str, Any]):
+        self.case_id = case_id
+        self.url = str(config["url"])
+        self.interval = float(config["interval"])
+        self.timeout = float(config["timeout"])
+        self.output_path = Path(config["output"])
+        self.stop_event = threading.Event()
+        self.thread: threading.Thread | None = None
+        self.output_file = None
+        self.t0 = 0.0
+        self.sample_index = 0
+
+    def start(self) -> None:
+        self.output_path.parent.mkdir(parents=True, exist_ok=True)
+        self.output_file = self.output_path.open("w", buffering=1)
+        self.t0 = time.monotonic()
+        self._write(
+            {
+                "type": "load_sampler_start",
+                "case_id": self.case_id,
+                "t": round(time.time(), 6),
+                "url": self.url,
+                "interval": self.interval,
+                "timeout": self.timeout,
+            }
+        )
+        self.sample_once()
+        self.thread = threading.Thread(
+            target=self._run,
+            name=f"load-metrics-sampler-{self.case_id}",
+            daemon=True,
+        )
+        self.thread.start()
+
+    def stop(self) -> None:
+        self.stop_event.set()
+        if self.thread is not None:
+            self.thread.join(timeout=max(self.timeout + 1.0, 2.0))
+        self._write(
+            {
+                "type": "load_sampler_stop",
+                "case_id": self.case_id,
+                "t": round(time.time(), 6),
+                "elapsed_secs": round(time.monotonic() - self.t0, 3),
+                "samples": self.sample_index,
+            }
+        )
+        if self.output_file is not None:
+            self.output_file.close()
+            self.output_file = None
+
+    def _run(self) -> None:
+        while not self.stop_event.wait(self.interval):
+            self.sample_once()
+
+    def sample_once(self) -> None:
+        self.sample_index += 1
+        now = time.time()
+        elapsed = time.monotonic() - self.t0
+        base_record = {
+            "case_id": self.case_id,
+            "sample_index": self.sample_index,
+            "t": round(now, 6),
+            "elapsed_secs": round(elapsed, 3),
+            "url": self.url,
+        }
+        try:
+            with urllib.request.urlopen(self.url, timeout=self.timeout) as response:
+                payload = json.load(response)
+            self._write_load_records(base_record, payload)
+        except Exception as exc:
+            self._write(
+                {
+                    **base_record,
+                    "type": "load_error",
+                    "error": str(exc),
+                }
+            )
+
+    def _write_load_records(self, base_record: dict[str, Any], payload: dict[str, Any]) -> None:
+        aggregate = payload.get("aggregate")
+        if isinstance(aggregate, dict):
+            self._write(
+                {
+                    **base_record,
+                    "type": "load_aggregate",
+                    "server_timestamp": payload.get("timestamp"),
+                    "version": payload.get("version"),
+                    "dp_rank_count": payload.get("dp_rank_count"),
+                    **aggregate,
+                }
+            )
+
+        loads = payload.get("loads") or []
+        for load in loads:
+            if not isinstance(load, dict):
+                continue
+            self._write(
+                {
+                    **base_record,
+                    "type": "load",
+                    "server_timestamp": payload.get("timestamp"),
+                    **load,
+                }
+            )
+
+    def _write(self, obj: dict[str, Any]) -> None:
+        if self.output_file is None:
+            return
+        self.output_file.write(json.dumps(obj, ensure_ascii=False) + "\n")
 
 
 class ManagedProcess:
@@ -719,8 +937,8 @@ def choose_run_dir(output_root: Path, case_id: str) -> Path:
     return output_root / f"{case_id}_{time.strftime('%Y%m%d_%H%M%S')}"
 
 
-def run_case(case_id: str, output_root: Path) -> None:
-    case = load_case(case_id)
+def run_case(case_id: str, output_root: Path, config_dir: Path) -> None:
+    case = load_case(case_id, config_dir)
     run_dir = choose_run_dir(output_root, case["id"])
     run_dir.mkdir(parents=True, exist_ok=True)
 
@@ -737,7 +955,9 @@ def run_case(case_id: str, output_root: Path) -> None:
     server_cmd, server_env = server_command(case)
     router_cmd = router_command(case) if case.get("router", {}).get("enabled") else None
     proxy_cmd = proxy_command(case, run_dir) if case.get("proxy", {}).get("enabled") else None
-    client_cmd = workload_command(case, run_dir)
+    client_cmd = workload_command(case, run_dir) if client_enabled(case) else None
+    loss_cmd = loss_command(case, run_dir) if loss_enabled(case) else None
+    load_sampler_cfg = loads_sampler_config(case, run_dir)
     write_commands(
         run_dir,
         {
@@ -750,10 +970,13 @@ def run_case(case_id: str, output_root: Path) -> None:
             "router": router_cmd,
             "proxy": proxy_cmd,
             "client": client_cmd,
+            "loss": loss_cmd,
+            "loads_sampler": load_sampler_cfg,
         },
     )
 
     processes: list[ManagedProcess] = []
+    samplers: list[LoadMetricsSampler] = []
 
     try:
         server = ManagedProcess("server", server_cmd, run_dir / "server.log", server_env)
@@ -796,12 +1019,27 @@ def run_case(case_id: str, output_root: Path) -> None:
                 service_ready,
             )
 
-        client_log = run_dir / "client_console.log"
-        print(f"[bench] running workload: {client_base_url(case)}", flush=True)
-        run_workload(client_cmd, client_log)
-        write_summary(run_dir, case)
-        print(f"[bench] summary: {run_dir / 'summary.json'}", flush=True)
+        if load_sampler_cfg is not None:
+            load_sampler = LoadMetricsSampler(case["id"], load_sampler_cfg)
+            samplers.append(load_sampler)
+            print(f"[bench] sampling loads: {load_sampler.output_path}", flush=True)
+            load_sampler.start()
+
+        if client_cmd is not None:
+            client_log = run_dir / "client_console.log"
+            print(f"[bench] running workload: {client_base_url(case)}", flush=True)
+            run_workload(client_cmd, client_log)
+            write_summary(run_dir, case)
+            print(f"[bench] summary: {run_dir / 'summary.json'}", flush=True)
+
+        if loss_cmd is not None:
+            loss_log = run_dir / "loss_console.log"
+            print(f"[bench] running loss scoring: {loss_base_url(case)}", flush=True)
+            run_workload(loss_cmd, loss_log)
+            print(f"[bench] loss summary: {run_dir / case['loss'].get('summary_output', 'loss_summary.json')}", flush=True)
     finally:
+        for sampler in reversed(samplers):
+            sampler.stop()
         for process in reversed(processes):
             process.stop()
 
@@ -809,28 +1047,44 @@ def run_case(case_id: str, output_root: Path) -> None:
 def main() -> int:
     parser = argparse.ArgumentParser(description="Run qiannan benchmark cases.")
     sub = parser.add_subparsers(dest="command", required=True)
-    sub.add_parser("list")
+
+    def add_common_args(subparser: argparse.ArgumentParser) -> None:
+        subparser.add_argument(
+            "--config-dir",
+            type=Path,
+            default=default_config_dir(),
+            help="Directory containing case JSON files.",
+        )
+        subparser.add_argument(
+            "--output-root",
+            type=Path,
+            default=default_output_root(),
+            help="Directory for benchmark run outputs.",
+        )
+
+    list_cmd = sub.add_parser("list")
+    add_common_args(list_cmd)
     run_one = sub.add_parser("run")
+    add_common_args(run_one)
     run_one.add_argument("case_id")
     run_all = sub.add_parser("all")
+    add_common_args(run_all)
     run_all.add_argument("--continue-on-error", action="store_true")
     args = parser.parse_args()
 
     if args.command == "list":
-        print("\n".join(case_ids()))
+        print("\n".join(case_ids(args.config_dir)))
         return 0
 
-    output_root = Path(os.environ.get("BENCH_OUTPUT_ROOT", str(TEST_ROOT / "benchmark_runs")))
-
     if args.command == "run":
-        run_case(args.case_id, output_root)
+        run_case(args.case_id, args.output_root, args.config_dir)
         return 0
 
     failed: list[str] = []
-    for case_id in case_ids():
+    for case_id in case_ids(args.config_dir):
         print(f"\n[bench] ===== {case_id} =====", flush=True)
         try:
-            run_case(case_id, output_root)
+            run_case(case_id, args.output_root, args.config_dir)
         except Exception as exc:
             print(f"[bench] FAIL {case_id}: {exc}", file=sys.stderr, flush=True)
             failed.append(case_id)
@@ -843,7 +1097,7 @@ def main() -> int:
             print(f"  {case_id}", file=sys.stderr)
         return 1
 
-    print(f"\n[bench] all cases completed: {output_root}", flush=True)
+    print(f"\n[bench] all cases completed: {args.output_root}", flush=True)
     return 0
 
 

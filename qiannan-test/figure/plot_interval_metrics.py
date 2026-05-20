@@ -8,6 +8,7 @@ Default usage from the repository root:
 The input can be a JSON object, a JSON array, or JSONL with one summary per
 line. Figures are written as standalone SVG files and require only the Python
 standard library.
+By default, generated figures are written under qiannan-test/figure-runs/.
 """
 
 from __future__ import annotations
@@ -24,7 +25,7 @@ from typing import Any, Sequence
 
 SCRIPT_DIR = Path(__file__).resolve().parent
 DEFAULT_INPUT = SCRIPT_DIR.parent / "runs" / "interval_summaries.jsonl"
-DEFAULT_OUT_DIR = SCRIPT_DIR / "out"
+FIGURE_RUNS_DIR = SCRIPT_DIR.parent / "figure-runs"
 
 BG = "#ffffff"
 TEXT = "#111827"
@@ -63,6 +64,20 @@ class BarPanel:
     series: list[Series]
 
 
+def safe_path_name(value: str) -> str:
+    chars = [c if c.isalnum() or c in "._-" else "_" for c in value.strip()]
+    name = "".join(chars).strip("._-")
+    return name or "out"
+
+
+def default_out_dir(input_path: Path) -> Path:
+    if str(input_path) == "-":
+        return FIGURE_RUNS_DIR / "stdin"
+    if input_path.name == "interval_summaries.jsonl":
+        return FIGURE_RUNS_DIR / safe_path_name(input_path.parent.name)
+    return FIGURE_RUNS_DIR / safe_path_name(input_path.stem)
+
+
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description="Plot SGLang interval_summary JSON/JSONL metrics as SVG figures."
@@ -78,10 +93,13 @@ def parse_args() -> argparse.Namespace:
         "-o",
         "--out-dir",
         type=Path,
-        default=DEFAULT_OUT_DIR,
-        help=f"directory for generated SVG files (default: {DEFAULT_OUT_DIR})",
+        default=None,
+        help="directory for generated SVG files (default: qiannan-test/figure-runs/<input-name>)",
     )
-    return parser.parse_args()
+    args = parser.parse_args()
+    if args.out_dir is None:
+        args.out_dir = default_out_dir(args.input)
+    return args
 
 
 def load_records(input_path: Path) -> list[dict[str, Any]]:

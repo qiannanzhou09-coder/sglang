@@ -1,0 +1,20 @@
+{
+  "id": "d03_t6_dp8_router_hicache",
+  "description": "T6 fixture on DP8 TP8 with cache-aware router and stage2 HiCache settings.",
+  "profile": "stage2_hicache",
+  "server": {
+    "dp_size": 8,
+    "enable_dp_attention": true
+  },
+  "client": {
+    "data_path": "qiannan-test/fixtures/T6_official_50.jsonl",
+    "summary_interval": 30
+  },
+  "samplers": {
+    "loads": {
+      "enabled": true,
+      "interval": 5,
+      "include": "all"
+    }
+  }
+}

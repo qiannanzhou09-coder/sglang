@@ -1,0 +1,16 @@
+{
+  "id": "d13_t5_dp2_router_hicache",
+  "description": "T5 long-wait fixture on DP2 TP8 with cache-aware router and stage2 HiCache settings.",
+  "profile": "stage2_hicache",
+  "client": {
+    "data_path": "qiannan-test/fixtures/T5_long_wait.jsonl",
+    "summary_interval": 30
+  },
+  "samplers": {
+    "loads": {
+      "enabled": true,
+      "interval": 5,
+      "include": "all"
+    }
+  }
+}
