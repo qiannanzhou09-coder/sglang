@@ -125,7 +125,7 @@ nll = mean_t -log p_model(gen_ids[t] | prompt_ids + gen_ids[:t])
 By default the profile points to:
 
 ```text
-qiannan-test/eval_qwen3.5_122b/generations.jsonl
+qiannan-test/data/generations.jsonl
 ```
 
 and takes `per_domain=20` rows from each domain. Override these in a config's

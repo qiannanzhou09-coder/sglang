@@ -51,7 +51,7 @@
   },
   "loss": {
     "enabled": false,
-    "data_path": "qiannan-test/eval_qwen3.5_122b/generations.jsonl",
+    "data_path": "qiannan-test/data/generations.jsonl",
     "base_url_mode": "direct",
     "per_domain": 20,
     "concurrency": 16,

@@ -6,7 +6,7 @@ ROOT_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
 
 PYTHON_BIN="${PYTHON_BIN:-python3}"
 PRUNE_TOOL_PATH="${PRUNE_TOOL_PATH:-${ROOT_DIR}/tools/prune_reap_ckpt.py}"
-PRUNE_PLAN_PATH="${PRUNE_PLAN_PATH:-${ROOT_DIR}/document/targeted_refusal_analysis.json}"
+PRUNE_PLAN_PATH="${PRUNE_PLAN_PATH:-${ROOT_DIR}/data/targeted_refusal_analysis.json}"
 BASE_MODEL_PATH="${BASE_MODEL_PATH:-/home/Qwen3.5-122B-A10B}"
 SOURCE_MODEL_PATH="${PRUNE_SOURCE_MODEL_PATH:-${BASE_MODEL_PATH}}"
 PRUNED_MODEL_ROOT="${PRUNED_MODEL_ROOT:-/home/qwen3.5-pruned-models}"

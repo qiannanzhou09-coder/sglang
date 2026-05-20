@@ -85,13 +85,13 @@ Usage
     # REAP-20-FP8 (keep vision; prune LM + MTP)
     python tools/prune_reap_ckpt.py \\
         --src   /home/Qwen3.5-122B-A10B \\
-        --plan  qiannan-test/document/targeted_refusal_analysis.json \\
+        --plan  qiannan-test/data/targeted_refusal_analysis.json \\
         --dst   /home/qwen3.5-pruned-models/Qwen3.5-122B-A10B-REAP-20
 
     # REAP-20-FP8-text-only (prune LM + MTP, drop ViT)
     python tools/prune_reap_ckpt.py \\
         --src   /home/Qwen3.5-122B-A10B \\
-        --plan  qiannan-test/document/targeted_refusal_analysis.json \\
+        --plan  qiannan-test/data/targeted_refusal_analysis.json \\
         --dst   /home/qwen3.5-pruned-models/Qwen3.5-122B-A10B-REAP-20-text-only \\
         --strip-visual
 

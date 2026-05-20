@@ -1,0 +1,184 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="1580" viewBox="0 0 1280 1580">
+<rect x="0.0" y="0.0" width="1280.0" height="1580.0" rx="0.0" fill="#ffffff"/>
+<text x="34.0" y="42.0" font-family="Inter, Arial, sans-serif" font-size="25" fill="#111827" text-anchor="start" font-weight="700">Admission Control Optimization Summary</text>
+<text x="34.0" y="68.0" font-family="Inter, Arial, sans-serif" font-size="13" fill="#6b7280" text-anchor="start" font-weight="400">01_dp2tp8_hicache vs 02_admission_dp2tp8_hicache. Failed rounds: 139 -&gt; 0. Planned rounds: 36.55K; completed sessions: 500/500.</text>
+<rect x="34.0" y="100.0" width="394.7" height="118.0" rx="5.0" fill="#ffffff" stroke="#e5e7eb" stroke-width="1"/>
+<text x="48.0" y="124.0" font-family="Inter, Arial, sans-serif" font-size="13" fill="#6b7280" text-anchor="start" font-weight="700">Output Throughput</text>
+<text x="48.0" y="158.0" font-family="Inter, Arial, sans-serif" font-size="24" fill="#111827" text-anchor="start" font-weight="700">758</text>
+<text x="48.0" y="178.0" font-family="Inter, Arial, sans-serif" font-size="11" fill="#6b7280" text-anchor="start" font-weight="400">tok/s</text>
+<text x="414.7" y="158.0" font-family="Inter, Arial, sans-serif" font-size="13" fill="#059669" text-anchor="end" font-weight="700">+229.6%</text>
+<text x="48.0" y="202.0" font-family="Inter, Arial, sans-serif" font-size="11" fill="#6b7280" text-anchor="start" font-weight="400">No admission control: 230 -&gt; Admission control: 758</text>
+<rect x="442.7" y="100.0" width="394.7" height="118.0" rx="5.0" fill="#ffffff" stroke="#e5e7eb" stroke-width="1"/>
+<text x="456.7" y="124.0" font-family="Inter, Arial, sans-serif" font-size="13" fill="#6b7280" text-anchor="start" font-weight="700">Request Throughput</text>
+<text x="456.7" y="158.0" font-family="Inter, Arial, sans-serif" font-size="24" fill="#111827" text-anchor="start" font-weight="700">3.56</text>
+<text x="456.7" y="178.0" font-family="Inter, Arial, sans-serif" font-size="11" fill="#6b7280" text-anchor="start" font-weight="400">req/s</text>
+<text x="823.3" y="158.0" font-family="Inter, Arial, sans-serif" font-size="13" fill="#059669" text-anchor="end" font-weight="700">+229.6%</text>
+<text x="456.7" y="202.0" font-family="Inter, Arial, sans-serif" font-size="11" fill="#6b7280" text-anchor="start" font-weight="400">No admission control: 1.08 -&gt; Admission control: 3.56</text>
+<rect x="851.3" y="100.0" width="394.7" height="118.0" rx="5.0" fill="#ffffff" stroke="#e5e7eb" stroke-width="1"/>
+<text x="865.3" y="124.0" font-family="Inter, Arial, sans-serif" font-size="13" fill="#6b7280" text-anchor="start" font-weight="700">Cache Hit Rate</text>
+<text x="865.3" y="158.0" font-family="Inter, Arial, sans-serif" font-size="24" fill="#111827" text-anchor="start" font-weight="700">96.8%</text>
+<text x="865.3" y="178.0" font-family="Inter, Arial, sans-serif" font-size="11" fill="#6b7280" text-anchor="start" font-weight="400">cached prompt share</text>
+<text x="1232.0" y="158.0" font-family="Inter, Arial, sans-serif" font-size="13" fill="#059669" text-anchor="end" font-weight="700">45.3 pp</text>
+<text x="865.3" y="202.0" font-family="Inter, Arial, sans-serif" font-size="11" fill="#6b7280" text-anchor="start" font-weight="400">No admission control: 51.6% -&gt; Admission control: 96.8%</text>
+<rect x="34.0" y="232.0" width="394.7" height="118.0" rx="5.0" fill="#ffffff" stroke="#e5e7eb" stroke-width="1"/>
+<text x="48.0" y="256.0" font-family="Inter, Arial, sans-serif" font-size="13" fill="#6b7280" text-anchor="start" font-weight="700">Avg TTFT</text>
+<text x="48.0" y="290.0" font-family="Inter, Arial, sans-serif" font-size="24" fill="#111827" text-anchor="start" font-weight="700">11.17s</text>
+<text x="48.0" y="310.0" font-family="Inter, Arial, sans-serif" font-size="11" fill="#6b7280" text-anchor="start" font-weight="400">seconds</text>
+<text x="414.7" y="290.0" font-family="Inter, Arial, sans-serif" font-size="13" fill="#059669" text-anchor="end" font-weight="700">-94.6%</text>
+<text x="48.0" y="334.0" font-family="Inter, Arial, sans-serif" font-size="11" fill="#6b7280" text-anchor="start" font-weight="400">No admission control: 207.7s -&gt; Admission control: 11.17s</text>
+<rect x="442.7" y="232.0" width="394.7" height="118.0" rx="5.0" fill="#ffffff" stroke="#e5e7eb" stroke-width="1"/>
+<text x="456.7" y="256.0" font-family="Inter, Arial, sans-serif" font-size="13" fill="#6b7280" text-anchor="start" font-weight="700">Avg Round Latency</text>
+<text x="456.7" y="290.0" font-family="Inter, Arial, sans-serif" font-size="24" fill="#111827" text-anchor="start" font-weight="700">22.77s</text>
+<text x="456.7" y="310.0" font-family="Inter, Arial, sans-serif" font-size="11" fill="#6b7280" text-anchor="start" font-weight="400">seconds</text>
+<text x="823.3" y="290.0" font-family="Inter, Arial, sans-serif" font-size="13" fill="#059669" text-anchor="end" font-weight="700">-92.0%</text>
+<text x="456.7" y="334.0" font-family="Inter, Arial, sans-serif" font-size="11" fill="#6b7280" text-anchor="start" font-weight="400">No admission control: 284.7s -&gt; Admission control: 22.77s</text>
+<rect x="851.3" y="232.0" width="394.7" height="118.0" rx="5.0" fill="#ffffff" stroke="#e5e7eb" stroke-width="1"/>
+<text x="865.3" y="256.0" font-family="Inter, Arial, sans-serif" font-size="13" fill="#6b7280" text-anchor="start" font-weight="700">Completion Ratio</text>
+<text x="865.3" y="290.0" font-family="Inter, Arial, sans-serif" font-size="24" fill="#111827" text-anchor="start" font-weight="700">100.0%</text>
+<text x="865.3" y="310.0" font-family="Inter, Arial, sans-serif" font-size="11" fill="#6b7280" text-anchor="start" font-weight="400">completed / planned rounds</text>
+<text x="1232.0" y="290.0" font-family="Inter, Arial, sans-serif" font-size="13" fill="#059669" text-anchor="end" font-weight="700">15.5 pp</text>
+<text x="865.3" y="334.0" font-family="Inter, Arial, sans-serif" font-size="11" fill="#6b7280" text-anchor="start" font-weight="400">No admission control: 84.5% -&gt; Admission control: 100.0%</text>
+<rect x="34.0" y="378.0" width="595.0" height="352.0" rx="5.0" fill="#f9fafb" stroke="#e5e7eb" stroke-width="1"/>
+<text x="52.0" y="406.0" font-family="Inter, Arial, sans-serif" font-size="16" fill="#111827" text-anchor="start" font-weight="700">Higher Is Better</text>
+<text x="52.0" y="428.0" font-family="Inter, Arial, sans-serif" font-size="12" fill="#6b7280" text-anchor="start" font-weight="400">Admission-control value divided by baseline. Baseline equals 1x.</text>
+<line x1="230.0" y1="452.0" x2="230.0" y2="692.0" stroke="#e5e7eb" stroke-width="1.0" stroke-dasharray="3 5"/>
+<text x="230.0" y="710.0" font-family="Inter, Arial, sans-serif" font-size="10" fill="#6b7280" text-anchor="middle" font-weight="400">0</text>
+<line x1="322.8" y1="452.0" x2="322.8" y2="692.0" stroke="#e5e7eb" stroke-width="1.0" stroke-dasharray="3 5"/>
+<text x="322.8" y="710.0" font-family="Inter, Arial, sans-serif" font-size="10" fill="#6b7280" text-anchor="middle" font-weight="400">0.93</text>
+<line x1="415.5" y1="452.0" x2="415.5" y2="692.0" stroke="#e5e7eb" stroke-width="1.0" stroke-dasharray="3 5"/>
+<text x="415.5" y="710.0" font-family="Inter, Arial, sans-serif" font-size="10" fill="#6b7280" text-anchor="middle" font-weight="400">1.85</text>
+<line x1="508.3" y1="452.0" x2="508.3" y2="692.0" stroke="#e5e7eb" stroke-width="1.0" stroke-dasharray="3 5"/>
+<text x="508.3" y="710.0" font-family="Inter, Arial, sans-serif" font-size="10" fill="#6b7280" text-anchor="middle" font-weight="400">2.78</text>
+<line x1="601.0" y1="452.0" x2="601.0" y2="692.0" stroke="#e5e7eb" stroke-width="1.0" stroke-dasharray="3 5"/>
+<text x="601.0" y="710.0" font-family="Inter, Arial, sans-serif" font-size="10" fill="#6b7280" text-anchor="middle" font-weight="400">3.7</text>
+<line x1="330.3" y1="448.0" x2="330.3" y2="692.0" stroke="#9ca3af" stroke-width="1.4"/>
+<text x="335.3" y="444.0" font-family="Inter, Arial, sans-serif" font-size="10" fill="#6b7280" text-anchor="start" font-weight="400">baseline</text>
+<text x="52.0" y="481.8" font-family="Inter, Arial, sans-serif" font-size="12" fill="#111827" text-anchor="start" font-weight="700">Output throughput</text>
+<rect x="230.0" y="465.4" width="330.5" height="24.8" rx="4.0" fill="#2563eb"/>
+<text x="552.5" y="475.8" font-family="Inter, Arial, sans-serif" font-size="12" fill="#ffffff" text-anchor="end" font-weight="700">3.30x</text>
+<text x="552.5" y="491.8" font-family="Inter, Arial, sans-serif" font-size="10" fill="#dbeafe" text-anchor="end" font-weight="400">230 -&gt; 758 tok/s</text>
+<text x="52.0" y="533.4" font-family="Inter, Arial, sans-serif" font-size="12" fill="#111827" text-anchor="start" font-weight="700">Request throughput</text>
+<rect x="230.0" y="517.0" width="330.5" height="24.8" rx="4.0" fill="#2563eb"/>
+<text x="552.5" y="527.4" font-family="Inter, Arial, sans-serif" font-size="12" fill="#ffffff" text-anchor="end" font-weight="700">3.30x</text>
+<text x="552.5" y="543.4" font-family="Inter, Arial, sans-serif" font-size="10" fill="#dbeafe" text-anchor="end" font-weight="400">1.08 -&gt; 3.56 req/s</text>
+<text x="52.0" y="585.0" font-family="Inter, Arial, sans-serif" font-size="12" fill="#111827" text-anchor="start" font-weight="700">Cache hit rate</text>
+<rect x="230.0" y="568.6" width="188.3" height="24.8" rx="4.0" fill="#2563eb"/>
+<text x="426.3" y="579.0" font-family="Inter, Arial, sans-serif" font-size="12" fill="#111827" text-anchor="start" font-weight="700">1.88x</text>
+<text x="426.3" y="595.0" font-family="Inter, Arial, sans-serif" font-size="10" fill="#6b7280" text-anchor="start" font-weight="400">51.6% -&gt; 96.8%</text>
+<text x="52.0" y="636.6" font-family="Inter, Arial, sans-serif" font-size="12" fill="#111827" text-anchor="start" font-weight="700">Completion ratio</text>
+<rect x="230.0" y="620.2" width="118.7" height="24.8" rx="4.0" fill="#2563eb"/>
+<text x="356.7" y="630.6" font-family="Inter, Arial, sans-serif" font-size="12" fill="#111827" text-anchor="start" font-weight="700">1.18x</text>
+<text x="356.7" y="646.6" font-family="Inter, Arial, sans-serif" font-size="10" fill="#6b7280" text-anchor="start" font-weight="400">84.5% -&gt; 100.0%</text>
+<text x="52.0" y="688.2" font-family="Inter, Arial, sans-serif" font-size="12" fill="#111827" text-anchor="start" font-weight="700">Successful rounds</text>
+<rect x="230.0" y="671.8" width="118.7" height="24.8" rx="4.0" fill="#2563eb"/>
+<text x="356.7" y="682.2" font-family="Inter, Arial, sans-serif" font-size="12" fill="#111827" text-anchor="start" font-weight="700">1.18x</text>
+<text x="356.7" y="698.2" font-family="Inter, Arial, sans-serif" font-size="10" fill="#6b7280" text-anchor="start" font-weight="400">30.88K -&gt; 36.55K</text>
+<text x="415.5" y="732.0" font-family="Inter, Arial, sans-serif" font-size="11" fill="#6b7280" text-anchor="middle" font-weight="400">relative multiplier</text>
+<rect x="651.0" y="378.0" width="595.0" height="352.0" rx="5.0" fill="#f9fafb" stroke="#e5e7eb" stroke-width="1"/>
+<text x="669.0" y="406.0" font-family="Inter, Arial, sans-serif" font-size="16" fill="#111827" text-anchor="start" font-weight="700">Lower Is Better</text>
+<text x="669.0" y="428.0" font-family="Inter, Arial, sans-serif" font-size="12" fill="#6b7280" text-anchor="start" font-weight="400">Baseline value divided by admission-control value. Larger bars mean</text>
+<text x="669.0" y="444.0" font-family="Inter, Arial, sans-serif" font-size="12" fill="#6b7280" text-anchor="start" font-weight="400">faster/lower latency.</text>
+<line x1="847.0" y1="452.0" x2="847.0" y2="692.0" stroke="#e5e7eb" stroke-width="1.0" stroke-dasharray="3 5"/>
+<text x="847.0" y="710.0" font-family="Inter, Arial, sans-serif" font-size="10" fill="#6b7280" text-anchor="middle" font-weight="400">0</text>
+<line x1="921.2" y1="452.0" x2="921.2" y2="692.0" stroke="#e5e7eb" stroke-width="1.0" stroke-dasharray="3 5"/>
+<text x="921.2" y="710.0" font-family="Inter, Arial, sans-serif" font-size="10" fill="#6b7280" text-anchor="middle" font-weight="400">4</text>
+<line x1="995.4" y1="452.0" x2="995.4" y2="692.0" stroke="#e5e7eb" stroke-width="1.0" stroke-dasharray="3 5"/>
+<text x="995.4" y="710.0" font-family="Inter, Arial, sans-serif" font-size="10" fill="#6b7280" text-anchor="middle" font-weight="400">8</text>
+<line x1="1069.6" y1="452.0" x2="1069.6" y2="692.0" stroke="#e5e7eb" stroke-width="1.0" stroke-dasharray="3 5"/>
+<text x="1069.6" y="710.0" font-family="Inter, Arial, sans-serif" font-size="10" fill="#6b7280" text-anchor="middle" font-weight="400">12</text>
+<line x1="1143.8" y1="452.0" x2="1143.8" y2="692.0" stroke="#e5e7eb" stroke-width="1.0" stroke-dasharray="3 5"/>
+<text x="1143.8" y="710.0" font-family="Inter, Arial, sans-serif" font-size="10" fill="#6b7280" text-anchor="middle" font-weight="400">16</text>
+<line x1="1218.0" y1="452.0" x2="1218.0" y2="692.0" stroke="#e5e7eb" stroke-width="1.0" stroke-dasharray="3 5"/>
+<text x="1218.0" y="710.0" font-family="Inter, Arial, sans-serif" font-size="10" fill="#6b7280" text-anchor="middle" font-weight="400">20</text>
+<text x="669.0" y="477.5" font-family="Inter, Arial, sans-serif" font-size="12" fill="#111827" text-anchor="start" font-weight="700">Wall time</text>
+<rect x="847.0" y="463.2" width="51.7" height="20.6" rx="4.0" fill="#059669"/>
+<text x="906.7" y="471.5" font-family="Inter, Arial, sans-serif" font-size="12" fill="#111827" text-anchor="start" font-weight="700">2.79x</text>
+<text x="906.7" y="487.5" font-family="Inter, Arial, sans-serif" font-size="10" fill="#6b7280" text-anchor="start" font-weight="400">28.6Ks -&gt; 10.27Ks</text>
+<text x="669.0" y="520.5" font-family="Inter, Arial, sans-serif" font-size="12" fill="#111827" text-anchor="start" font-weight="700">Avg session time</text>
+<rect x="847.0" y="506.2" width="77.2" height="20.6" rx="4.0" fill="#059669"/>
+<text x="932.2" y="514.5" font-family="Inter, Arial, sans-serif" font-size="12" fill="#111827" text-anchor="start" font-weight="700">4.16x</text>
+<text x="932.2" y="530.5" font-family="Inter, Arial, sans-serif" font-size="10" fill="#6b7280" text-anchor="start" font-weight="400">19.61Ks -&gt; 4.71Ks</text>
+<text x="669.0" y="563.5" font-family="Inter, Arial, sans-serif" font-size="12" fill="#111827" text-anchor="start" font-weight="700">TTFT avg</text>
+<rect x="847.0" y="549.2" width="344.9" height="20.6" rx="4.0" fill="#059669"/>
+<text x="1183.9" y="557.5" font-family="Inter, Arial, sans-serif" font-size="12" fill="#ffffff" text-anchor="end" font-weight="700">18.60x</text>
+<text x="1183.9" y="573.5" font-family="Inter, Arial, sans-serif" font-size="10" fill="#d1fae5" text-anchor="end" font-weight="400">207.7s -&gt; 11.17s</text>
+<text x="669.0" y="606.5" font-family="Inter, Arial, sans-serif" font-size="12" fill="#111827" text-anchor="start" font-weight="700">TTFT p99</text>
+<rect x="847.0" y="592.2" width="84.3" height="20.6" rx="4.0" fill="#059669"/>
+<text x="939.3" y="600.5" font-family="Inter, Arial, sans-serif" font-size="12" fill="#111827" text-anchor="start" font-weight="700">4.55x</text>
+<text x="939.3" y="616.5" font-family="Inter, Arial, sans-serif" font-size="10" fill="#6b7280" text-anchor="start" font-weight="400">1.16Ks -&gt; 256s</text>
+<text x="669.0" y="649.5" font-family="Inter, Arial, sans-serif" font-size="12" fill="#111827" text-anchor="start" font-weight="700">Round latency avg</text>
+<rect x="847.0" y="635.2" width="232.0" height="20.6" rx="4.0" fill="#059669"/>
+<text x="1071.0" y="643.5" font-family="Inter, Arial, sans-serif" font-size="12" fill="#ffffff" text-anchor="end" font-weight="700">12.51x</text>
+<text x="1071.0" y="659.5" font-family="Inter, Arial, sans-serif" font-size="10" fill="#d1fae5" text-anchor="end" font-weight="400">284.7s -&gt; 22.77s</text>
+<text x="669.0" y="692.5" font-family="Inter, Arial, sans-serif" font-size="12" fill="#111827" text-anchor="start" font-weight="700">Round latency p99</text>
+<rect x="847.0" y="678.2" width="89.1" height="20.6" rx="4.0" fill="#059669"/>
+<text x="944.1" y="686.5" font-family="Inter, Arial, sans-serif" font-size="12" fill="#111827" text-anchor="start" font-weight="700">4.81x</text>
+<text x="944.1" y="702.5" font-family="Inter, Arial, sans-serif" font-size="10" fill="#6b7280" text-anchor="start" font-weight="400">1.31Ks -&gt; 273.6s</text>
+<text x="1032.5" y="732.0" font-family="Inter, Arial, sans-serif" font-size="11" fill="#6b7280" text-anchor="middle" font-weight="400">speedup / reduction factor</text>
+<rect x="34.0" y="760.0" width="1212.0" height="438.0" rx="5.0" fill="#f9fafb" stroke="#e5e7eb" stroke-width="1"/>
+<text x="52.0" y="788.0" font-family="Inter, Arial, sans-serif" font-size="16" fill="#111827" text-anchor="start" font-weight="700">Latency Percentile Reduction</text>
+<text x="52.0" y="810.0" font-family="Inter, Arial, sans-serif" font-size="12" fill="#6b7280" text-anchor="start" font-weight="400">Percent reduction after admission control; labels show baseline -&gt; admission seconds.</text>
+<line x1="172.0" y1="834.0" x2="172.0" y2="1160.0" stroke="#e5e7eb" stroke-width="1.0" stroke-dasharray="3 5"/>
+<text x="172.0" y="1178.0" font-family="Inter, Arial, sans-serif" font-size="10" fill="#6b7280" text-anchor="middle" font-weight="400">0%</text>
+<line x1="433.5" y1="834.0" x2="433.5" y2="1160.0" stroke="#e5e7eb" stroke-width="1.0" stroke-dasharray="3 5"/>
+<text x="433.5" y="1178.0" font-family="Inter, Arial, sans-serif" font-size="10" fill="#6b7280" text-anchor="middle" font-weight="400">25%</text>
+<line x1="695.0" y1="834.0" x2="695.0" y2="1160.0" stroke="#e5e7eb" stroke-width="1.0" stroke-dasharray="3 5"/>
+<text x="695.0" y="1178.0" font-family="Inter, Arial, sans-serif" font-size="10" fill="#6b7280" text-anchor="middle" font-weight="400">50%</text>
+<line x1="956.5" y1="834.0" x2="956.5" y2="1160.0" stroke="#e5e7eb" stroke-width="1.0" stroke-dasharray="3 5"/>
+<text x="956.5" y="1178.0" font-family="Inter, Arial, sans-serif" font-size="10" fill="#6b7280" text-anchor="middle" font-weight="400">75%</text>
+<line x1="1218.0" y1="834.0" x2="1218.0" y2="1160.0" stroke="#e5e7eb" stroke-width="1.0" stroke-dasharray="3 5"/>
+<text x="1218.0" y="1178.0" font-family="Inter, Arial, sans-serif" font-size="10" fill="#6b7280" text-anchor="middle" font-weight="400">100%</text>
+<text x="52.0" y="859.5" font-family="Inter, Arial, sans-serif" font-size="12" fill="#111827" text-anchor="start" font-weight="700">TTFT avg</text>
+<rect x="172.0" y="844.5" width="989.7" height="22.0" rx="4.0" fill="#059669"/>
+<text x="1169.7" y="854.5" font-family="Inter, Arial, sans-serif" font-size="11" fill="#111827" text-anchor="start" font-weight="700">94.6%</text>
+<text x="1169.7" y="869.5" font-family="Inter, Arial, sans-serif" font-size="10" fill="#6b7280" text-anchor="start" font-weight="400">207.7s -&gt; 11.17s</text>
+<text x="52.0" y="902.5" font-family="Inter, Arial, sans-serif" font-size="12" fill="#111827" text-anchor="start" font-weight="700">TTFT p50</text>
+<rect x="172.0" y="887.5" width="1000.3" height="22.0" rx="4.0" fill="#059669"/>
+<text x="1180.3" y="897.5" font-family="Inter, Arial, sans-serif" font-size="11" fill="#111827" text-anchor="start" font-weight="700">95.6%</text>
+<text x="1180.3" y="912.5" font-family="Inter, Arial, sans-serif" font-size="10" fill="#6b7280" text-anchor="start" font-weight="400">18.07s -&gt; 0.79s</text>
+<text x="52.0" y="945.5" font-family="Inter, Arial, sans-serif" font-size="12" fill="#111827" text-anchor="start" font-weight="700">TTFT p90</text>
+<rect x="172.0" y="930.5" width="1041.3" height="22.0" rx="4.0" fill="#059669"/>
+<text x="1214.0" y="940.5" font-family="Inter, Arial, sans-serif" font-size="11" fill="#ffffff" text-anchor="end" font-weight="700">99.6%</text>
+<text x="1214.0" y="955.5" font-family="Inter, Arial, sans-serif" font-size="10" fill="#d1fae5" text-anchor="end" font-weight="400">439.6s -&gt; 1.98s</text>
+<text x="52.0" y="988.5" font-family="Inter, Arial, sans-serif" font-size="12" fill="#111827" text-anchor="start" font-weight="700">TTFT p99</text>
+<rect x="172.0" y="973.5" width="815.9" height="22.0" rx="4.0" fill="#059669"/>
+<text x="995.9" y="983.5" font-family="Inter, Arial, sans-serif" font-size="11" fill="#111827" text-anchor="start" font-weight="700">78.0%</text>
+<text x="995.9" y="998.5" font-family="Inter, Arial, sans-serif" font-size="10" fill="#6b7280" text-anchor="start" font-weight="400">1.16Ks -&gt; 256s</text>
+<text x="52.0" y="1031.5" font-family="Inter, Arial, sans-serif" font-size="12" fill="#111827" text-anchor="start" font-weight="700">Round avg</text>
+<rect x="172.0" y="1016.5" width="962.4" height="22.0" rx="4.0" fill="#059669"/>
+<text x="1142.4" y="1026.5" font-family="Inter, Arial, sans-serif" font-size="11" fill="#111827" text-anchor="start" font-weight="700">92.0%</text>
+<text x="1142.4" y="1041.5" font-family="Inter, Arial, sans-serif" font-size="10" fill="#6b7280" text-anchor="start" font-weight="400">284.7s -&gt; 22.77s</text>
+<text x="52.0" y="1074.5" font-family="Inter, Arial, sans-serif" font-size="12" fill="#111827" text-anchor="start" font-weight="700">Round p50</text>
+<rect x="172.0" y="1059.5" width="993.1" height="22.0" rx="4.0" fill="#059669"/>
+<text x="1173.1" y="1069.5" font-family="Inter, Arial, sans-serif" font-size="11" fill="#111827" text-anchor="start" font-weight="700">94.9%</text>
+<text x="1173.1" y="1084.5" font-family="Inter, Arial, sans-serif" font-size="10" fill="#6b7280" text-anchor="start" font-weight="400">197.1s -&gt; 9.96s</text>
+<text x="52.0" y="1117.5" font-family="Inter, Arial, sans-serif" font-size="12" fill="#111827" text-anchor="start" font-weight="700">Round p90</text>
+<rect x="172.0" y="1102.5" width="992.9" height="22.0" rx="4.0" fill="#059669"/>
+<text x="1172.9" y="1112.5" font-family="Inter, Arial, sans-serif" font-size="11" fill="#111827" text-anchor="start" font-weight="700">94.9%</text>
+<text x="1172.9" y="1127.5" font-family="Inter, Arial, sans-serif" font-size="10" fill="#6b7280" text-anchor="start" font-weight="400">530.2s -&gt; 26.91s</text>
+<text x="52.0" y="1160.5" font-family="Inter, Arial, sans-serif" font-size="12" fill="#111827" text-anchor="start" font-weight="700">Round p99</text>
+<rect x="172.0" y="1145.5" width="828.3" height="22.0" rx="4.0" fill="#059669"/>
+<text x="1008.3" y="1155.5" font-family="Inter, Arial, sans-serif" font-size="11" fill="#111827" text-anchor="start" font-weight="700">79.2%</text>
+<text x="1008.3" y="1170.5" font-family="Inter, Arial, sans-serif" font-size="10" fill="#6b7280" text-anchor="start" font-weight="400">1.31Ks -&gt; 273.6s</text>
+<rect x="34.0" y="1228.0" width="1212.0" height="290.0" rx="5.0" fill="#f9fafb" stroke="#e5e7eb" stroke-width="1"/>
+<text x="52.0" y="1256.0" font-family="Inter, Arial, sans-serif" font-size="16" fill="#111827" text-anchor="start" font-weight="700">Prompt Token Cache Mix</text>
+<text x="52.0" y="1278.0" font-family="Inter, Arial, sans-serif" font-size="12" fill="#6b7280" text-anchor="start" font-weight="400">Cached vs uncached prompt-token share in the completed run.</text>
+<text x="52.0" y="1349.0" font-family="Inter, Arial, sans-serif" font-size="13" fill="#111827" text-anchor="start" font-weight="700">No admission control</text>
+<text x="52.0" y="1369.0" font-family="Inter, Arial, sans-serif" font-size="11" fill="#6b7280" text-anchor="start" font-weight="400">1.79B prompt tokens</text>
+<rect x="180.0" y="1322.0" width="1032.0" height="42.0" rx="5.0" fill="#ffffff" stroke="#e5e7eb" stroke-width="1"/>
+<rect x="180.0" y="1322.0" width="532.2" height="42.0" rx="5.0" fill="#059669"/>
+<rect x="712.2" y="1322.0" width="499.8" height="42.0" rx="0.0" fill="#d97706"/>
+<text x="446.1" y="1349.0" font-family="Inter, Arial, sans-serif" font-size="12" fill="#ffffff" text-anchor="middle" font-weight="700">51.6% cached</text>
+<text x="962.1" y="1349.0" font-family="Inter, Arial, sans-serif" font-size="12" fill="#ffffff" text-anchor="middle" font-weight="700">48.4% uncached</text>
+<text x="52.0" y="1445.0" font-family="Inter, Arial, sans-serif" font-size="13" fill="#111827" text-anchor="start" font-weight="700">Admission control</text>
+<text x="52.0" y="1465.0" font-family="Inter, Arial, sans-serif" font-size="11" fill="#6b7280" text-anchor="start" font-weight="400">2.34B prompt tokens</text>
+<rect x="180.0" y="1418.0" width="1032.0" height="42.0" rx="5.0" fill="#ffffff" stroke="#e5e7eb" stroke-width="1"/>
+<rect x="180.0" y="1418.0" width="999.4" height="42.0" rx="5.0" fill="#059669"/>
+<rect x="1179.4" y="1418.0" width="32.6" height="42.0" rx="0.0" fill="#d97706"/>
+<text x="679.7" y="1445.0" font-family="Inter, Arial, sans-serif" font-size="12" fill="#ffffff" text-anchor="middle" font-weight="700">96.8% cached</text>
+<rect x="180.0" y="1478.0" width="16.0" height="12.0" rx="2.0" fill="#059669"/>
+<text x="204.0" y="1490.0" font-family="Inter, Arial, sans-serif" font-size="12" fill="#6b7280" text-anchor="start" font-weight="400">Cached prompt tokens</text>
+<rect x="400.0" y="1478.0" width="16.0" height="12.0" rx="2.0" fill="#d97706"/>
+<text x="424.0" y="1490.0" font-family="Inter, Arial, sans-serif" font-size="12" fill="#6b7280" text-anchor="start" font-weight="400">Uncached prompt tokens</text>
+<text x="34.0" y="1552.0" font-family="Inter, Arial, sans-serif" font-size="11" fill="#6b7280" text-anchor="start" font-weight="400">Source summaries: qiannan-test/runs/dp2tp8_hicache_summary.json and qiannan-test/runs/02_admission64_dp2tp8_summary</text>
+</svg>

@@ -117,7 +117,7 @@ Defaults:
 
 ```text
 BASE_MODEL_PATH=/home/Qwen3.5-122B-A10B
-PRUNE_PLAN_PATH=qiannan-test/document/targeted_refusal_analysis.json
+PRUNE_PLAN_PATH=qiannan-test/data/targeted_refusal_analysis.json
 PRUNED_MODEL_ROOT=/home/qwen3.5-pruned-models
 ```
 
