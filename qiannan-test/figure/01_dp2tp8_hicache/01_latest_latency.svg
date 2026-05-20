@@ -1,0 +1,81 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="694" viewBox="0 0 1200 694">
+<rect x="0.0" y="0.0" width="1200.0" height="694.0" rx="0.0" fill="#ffffff"/>
+<text x="24.0" y="34.0" font-family="Inter, Arial, sans-serif" font-size="22" fill="#111827" text-anchor="start" font-weight="700">Latest Latency Percentiles</text>
+<text x="24.0" y="58.0" font-family="Inter, Arial, sans-serif" font-size="13" fill="#6b7280" text-anchor="start" font-weight="400">Cumulative through 476.5 min; latest populated window ends at 476 min.</text>
+<text x="86.0" y="94.0" font-family="Inter, Arial, sans-serif" font-size="15" fill="#111827" text-anchor="start" font-weight="700">TTFT</text>
+<text x="24.0" y="98.0" font-family="Inter, Arial, sans-serif" font-size="12" fill="#6b7280" text-anchor="start" font-weight="400">seconds</text>
+<line x1="86.0" y1="306.0" x2="1164.0" y2="306.0" stroke="#e5e7eb" stroke-width="1.0"/>
+<text x="76.0" y="310.0" font-family="Inter, Arial, sans-serif" font-size="11" fill="#6b7280" text-anchor="end" font-weight="400">0</text>
+<line x1="86.0" y1="257.0" x2="1164.0" y2="257.0" stroke="#e5e7eb" stroke-width="1.0"/>
+<text x="76.0" y="261.0" font-family="Inter, Arial, sans-serif" font-size="11" fill="#6b7280" text-anchor="end" font-weight="400">314.1</text>
+<line x1="86.0" y1="208.0" x2="1164.0" y2="208.0" stroke="#e5e7eb" stroke-width="1.0"/>
+<text x="76.0" y="212.0" font-family="Inter, Arial, sans-serif" font-size="11" fill="#6b7280" text-anchor="end" font-weight="400">628.3</text>
+<line x1="86.0" y1="159.0" x2="1164.0" y2="159.0" stroke="#e5e7eb" stroke-width="1.0"/>
+<text x="76.0" y="163.0" font-family="Inter, Arial, sans-serif" font-size="11" fill="#6b7280" text-anchor="end" font-weight="400">942.4</text>
+<line x1="86.0" y1="110.0" x2="1164.0" y2="110.0" stroke="#e5e7eb" stroke-width="1.0"/>
+<text x="76.0" y="114.0" font-family="Inter, Arial, sans-serif" font-size="11" fill="#6b7280" text-anchor="end" font-weight="400">1.26K</text>
+<line x1="86.0" y1="306.0" x2="1164.0" y2="306.0" stroke="#9ca3af" stroke-width="1.2"/>
+<line x1="86.0" y1="110.0" x2="86.0" y2="306.0" stroke="#9ca3af" stroke-width="1.2"/>
+<text x="220.8" y="326.0" font-family="Inter, Arial, sans-serif" font-size="12" fill="#6b7280" text-anchor="middle" font-weight="400">avg</text>
+<rect x="174.8" y="273.6" width="44.0" height="32.4" rx="3.0" fill="#2563eb"/>
+<text x="196.8" y="267.6" font-family="Inter, Arial, sans-serif" font-size="11" fill="#6b7280" text-anchor="middle" font-weight="400">207.7</text>
+<rect x="222.8" y="305.9" width="44.0" height="0.1" rx="3.0" fill="#dc2626"/>
+<text x="244.8" y="299.9" font-family="Inter, Arial, sans-serif" font-size="11" fill="#6b7280" text-anchor="middle" font-weight="400">0.58</text>
+<text x="490.2" y="326.0" font-family="Inter, Arial, sans-serif" font-size="12" fill="#6b7280" text-anchor="middle" font-weight="400">p50</text>
+<rect x="444.2" y="303.2" width="44.0" height="2.8" rx="3.0" fill="#2563eb"/>
+<text x="466.2" y="297.2" font-family="Inter, Arial, sans-serif" font-size="11" fill="#6b7280" text-anchor="middle" font-weight="400">18.07</text>
+<rect x="492.2" y="305.9" width="44.0" height="0.1" rx="3.0" fill="#dc2626"/>
+<text x="514.2" y="299.9" font-family="Inter, Arial, sans-serif" font-size="11" fill="#6b7280" text-anchor="middle" font-weight="400">0.58</text>
+<text x="759.8" y="326.0" font-family="Inter, Arial, sans-serif" font-size="12" fill="#6b7280" text-anchor="middle" font-weight="400">p90</text>
+<rect x="713.8" y="237.4" width="44.0" height="68.6" rx="3.0" fill="#2563eb"/>
+<text x="735.8" y="231.4" font-family="Inter, Arial, sans-serif" font-size="11" fill="#6b7280" text-anchor="middle" font-weight="400">439.6</text>
+<rect x="761.8" y="305.9" width="44.0" height="0.1" rx="3.0" fill="#dc2626"/>
+<text x="783.8" y="299.9" font-family="Inter, Arial, sans-serif" font-size="11" fill="#6b7280" text-anchor="middle" font-weight="400">0.58</text>
+<text x="1029.2" y="326.0" font-family="Inter, Arial, sans-serif" font-size="12" fill="#6b7280" text-anchor="middle" font-weight="400">p99</text>
+<rect x="983.2" y="124.5" width="44.0" height="181.5" rx="3.0" fill="#2563eb"/>
+<text x="1005.2" y="118.5" font-family="Inter, Arial, sans-serif" font-size="11" fill="#6b7280" text-anchor="middle" font-weight="400">1.16K</text>
+<rect x="1031.2" y="305.9" width="44.0" height="0.1" rx="3.0" fill="#dc2626"/>
+<text x="1053.2" y="299.9" font-family="Inter, Arial, sans-serif" font-size="11" fill="#6b7280" text-anchor="middle" font-weight="400">0.58</text>
+<rect x="366.0" y="83.0" width="14.0" height="10.0" rx="2.0" fill="#2563eb"/>
+<text x="388.0" y="94.0" font-family="Inter, Arial, sans-serif" font-size="12" fill="#6b7280" text-anchor="start" font-weight="400">Cumulative</text>
+<rect x="536.0" y="83.0" width="14.0" height="10.0" rx="2.0" fill="#dc2626"/>
+<text x="558.0" y="94.0" font-family="Inter, Arial, sans-serif" font-size="12" fill="#6b7280" text-anchor="start" font-weight="400">Window</text>
+<text x="86.0" y="398.0" font-family="Inter, Arial, sans-serif" font-size="15" fill="#111827" text-anchor="start" font-weight="700">Round Latency</text>
+<text x="24.0" y="402.0" font-family="Inter, Arial, sans-serif" font-size="12" fill="#6b7280" text-anchor="start" font-weight="400">seconds</text>
+<line x1="86.0" y1="610.0" x2="1164.0" y2="610.0" stroke="#e5e7eb" stroke-width="1.0"/>
+<text x="76.0" y="614.0" font-family="Inter, Arial, sans-serif" font-size="11" fill="#6b7280" text-anchor="end" font-weight="400">0</text>
+<line x1="86.0" y1="561.0" x2="1164.0" y2="561.0" stroke="#e5e7eb" stroke-width="1.0"/>
+<text x="76.0" y="565.0" font-family="Inter, Arial, sans-serif" font-size="11" fill="#6b7280" text-anchor="end" font-weight="400">354.9</text>
+<line x1="86.0" y1="512.0" x2="1164.0" y2="512.0" stroke="#e5e7eb" stroke-width="1.0"/>
+<text x="76.0" y="516.0" font-family="Inter, Arial, sans-serif" font-size="11" fill="#6b7280" text-anchor="end" font-weight="400">709.9</text>
+<line x1="86.0" y1="463.0" x2="1164.0" y2="463.0" stroke="#e5e7eb" stroke-width="1.0"/>
+<text x="76.0" y="467.0" font-family="Inter, Arial, sans-serif" font-size="11" fill="#6b7280" text-anchor="end" font-weight="400">1.06K</text>
+<line x1="86.0" y1="414.0" x2="1164.0" y2="414.0" stroke="#e5e7eb" stroke-width="1.0"/>
+<text x="76.0" y="418.0" font-family="Inter, Arial, sans-serif" font-size="11" fill="#6b7280" text-anchor="end" font-weight="400">1.42K</text>
+<line x1="86.0" y1="610.0" x2="1164.0" y2="610.0" stroke="#9ca3af" stroke-width="1.2"/>
+<line x1="86.0" y1="414.0" x2="86.0" y2="610.0" stroke="#9ca3af" stroke-width="1.2"/>
+<text x="220.8" y="630.0" font-family="Inter, Arial, sans-serif" font-size="12" fill="#6b7280" text-anchor="middle" font-weight="400">avg</text>
+<rect x="174.8" y="570.7" width="44.0" height="39.3" rx="3.0" fill="#2563eb"/>
+<text x="196.8" y="564.7" font-family="Inter, Arial, sans-serif" font-size="11" fill="#6b7280" text-anchor="middle" font-weight="400">284.8</text>
+<rect x="222.8" y="609.7" width="44.0" height="0.3" rx="3.0" fill="#dc2626"/>
+<text x="244.8" y="603.7" font-family="Inter, Arial, sans-serif" font-size="11" fill="#6b7280" text-anchor="middle" font-weight="400">2.37</text>
+<text x="490.2" y="630.0" font-family="Inter, Arial, sans-serif" font-size="12" fill="#6b7280" text-anchor="middle" font-weight="400">p50</text>
+<rect x="444.2" y="582.8" width="44.0" height="27.2" rx="3.0" fill="#2563eb"/>
+<text x="466.2" y="576.8" font-family="Inter, Arial, sans-serif" font-size="11" fill="#6b7280" text-anchor="middle" font-weight="400">197.1</text>
+<rect x="492.2" y="609.7" width="44.0" height="0.3" rx="3.0" fill="#dc2626"/>
+<text x="514.2" y="603.7" font-family="Inter, Arial, sans-serif" font-size="11" fill="#6b7280" text-anchor="middle" font-weight="400">2.37</text>
+<text x="759.8" y="630.0" font-family="Inter, Arial, sans-serif" font-size="12" fill="#6b7280" text-anchor="middle" font-weight="400">p90</text>
+<rect x="713.8" y="536.8" width="44.0" height="73.2" rx="3.0" fill="#2563eb"/>
+<text x="735.8" y="530.8" font-family="Inter, Arial, sans-serif" font-size="11" fill="#6b7280" text-anchor="middle" font-weight="400">530.2</text>
+<rect x="761.8" y="609.7" width="44.0" height="0.3" rx="3.0" fill="#dc2626"/>
+<text x="783.8" y="603.7" font-family="Inter, Arial, sans-serif" font-size="11" fill="#6b7280" text-anchor="middle" font-weight="400">2.37</text>
+<text x="1029.2" y="630.0" font-family="Inter, Arial, sans-serif" font-size="12" fill="#6b7280" text-anchor="middle" font-weight="400">p99</text>
+<rect x="983.2" y="428.5" width="44.0" height="181.5" rx="3.0" fill="#2563eb"/>
+<text x="1005.2" y="422.5" font-family="Inter, Arial, sans-serif" font-size="11" fill="#6b7280" text-anchor="middle" font-weight="400">1.31K</text>
+<rect x="1031.2" y="609.7" width="44.0" height="0.3" rx="3.0" fill="#dc2626"/>
+<text x="1053.2" y="603.7" font-family="Inter, Arial, sans-serif" font-size="11" fill="#6b7280" text-anchor="middle" font-weight="400">2.37</text>
+<rect x="366.0" y="387.0" width="14.0" height="10.0" rx="2.0" fill="#2563eb"/>
+<text x="388.0" y="398.0" font-family="Inter, Arial, sans-serif" font-size="12" fill="#6b7280" text-anchor="start" font-weight="400">Cumulative</text>
+<rect x="536.0" y="387.0" width="14.0" height="10.0" rx="2.0" fill="#dc2626"/>
+<text x="558.0" y="398.0" font-family="Inter, Arial, sans-serif" font-size="12" fill="#6b7280" text-anchor="start" font-weight="400">Window</text>
+</svg>

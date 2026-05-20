@@ -1,0 +1,27 @@
+{
+  "id": "02_aimd_addmission_dp2tp8",
+  "description": "DP2TP8 + router + CONCUR-style AIMD active-session admission.",
+  "profile": "stage2_hicache",
+  "router": {
+    "port": 30001
+  },
+  "proxy": {
+    "enabled": true,
+    "host": "0.0.0.0",
+    "port": 30000,
+    "policy": "passthrough_router",
+    "session_idle_timeout": 7200,
+    "dynamic_admission": true,
+    "dynamic_min_active_sessions": 16,
+    "dynamic_initial_active_sessions": 64,
+    "dynamic_max_active_sessions": 256,
+    "dynamic_control_interval": 60,
+    "dynamic_low_kv_usage": 0.2,
+    "dynamic_high_kv_usage": 0.5,
+    "dynamic_cache_hit_threshold": 0.2,
+    "dynamic_additive_step": 2,
+    "dynamic_decrease_factor": 0.5,
+    "server_metrics_url": "http://127.0.0.1:8000/metrics",
+    "server_metrics_interval": 1.0
+  }
+}

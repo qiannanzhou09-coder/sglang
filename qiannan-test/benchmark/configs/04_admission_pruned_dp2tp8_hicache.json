@@ -1,6 +1,6 @@
 {
   "id": "04_admission_pruned_dp2tp8_hicache_ratio4",
-  "description": "Case 02 with the pruned model and HiCache ratio changed from 2 to 4.",
+  "description": "Case 02 active-session admission with the pruned model and HiCache ratio changed from 2 to 4.",
   "profile": "stage2_hicache",
   "server": {
     "model": {
@@ -20,8 +20,8 @@
     "max_active_sessions": 64,
     "session_idle_timeout": 7200,
     "dynamic_admission": true,
-    "dynamic_min_inflight_requests": 64,
-    "dynamic_initial_inflight_requests": 128,
+    "dynamic_min_inflight_requests": 16,
+    "dynamic_initial_inflight_requests": 64,
     "dynamic_max_inflight_requests": 256,
     "dynamic_control_interval": 60
   }

@@ -1,0 +1,71 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="998" viewBox="0 0 1200 998">
+<rect x="0.0" y="0.0" width="1200.0" height="998.0" rx="0.0" fill="#ffffff"/>
+<text x="24.0" y="34.0" font-family="Inter, Arial, sans-serif" font-size="22" fill="#111827" text-anchor="start" font-weight="700">Latest Throughput and Cache</text>
+<text x="24.0" y="58.0" font-family="Inter, Arial, sans-serif" font-size="13" fill="#6b7280" text-anchor="start" font-weight="400">Cumulative through 476.5 min; latest populated window ends at 476 min.</text>
+<text x="86.0" y="94.0" font-family="Inter, Arial, sans-serif" font-size="15" fill="#111827" text-anchor="start" font-weight="700">Request Throughput</text>
+<text x="24.0" y="98.0" font-family="Inter, Arial, sans-serif" font-size="12" fill="#6b7280" text-anchor="start" font-weight="400">requests / sec</text>
+<line x1="86.0" y1="306.0" x2="1164.0" y2="306.0" stroke="#e5e7eb" stroke-width="1.0"/>
+<text x="76.0" y="310.0" font-family="Inter, Arial, sans-serif" font-size="11" fill="#6b7280" text-anchor="end" font-weight="400">0</text>
+<line x1="86.0" y1="257.0" x2="1164.0" y2="257.0" stroke="#e5e7eb" stroke-width="1.0"/>
+<text x="76.0" y="261.0" font-family="Inter, Arial, sans-serif" font-size="11" fill="#6b7280" text-anchor="end" font-weight="400">0.29</text>
+<line x1="86.0" y1="208.0" x2="1164.0" y2="208.0" stroke="#e5e7eb" stroke-width="1.0"/>
+<text x="76.0" y="212.0" font-family="Inter, Arial, sans-serif" font-size="11" fill="#6b7280" text-anchor="end" font-weight="400">0.58</text>
+<line x1="86.0" y1="159.0" x2="1164.0" y2="159.0" stroke="#e5e7eb" stroke-width="1.0"/>
+<text x="76.0" y="163.0" font-family="Inter, Arial, sans-serif" font-size="11" fill="#6b7280" text-anchor="end" font-weight="400">0.87</text>
+<line x1="86.0" y1="110.0" x2="1164.0" y2="110.0" stroke="#e5e7eb" stroke-width="1.0"/>
+<text x="76.0" y="114.0" font-family="Inter, Arial, sans-serif" font-size="11" fill="#6b7280" text-anchor="end" font-weight="400">1.17</text>
+<line x1="86.0" y1="306.0" x2="1164.0" y2="306.0" stroke="#9ca3af" stroke-width="1.2"/>
+<line x1="86.0" y1="110.0" x2="86.0" y2="306.0" stroke="#9ca3af" stroke-width="1.2"/>
+<text x="355.5" y="326.0" font-family="Inter, Arial, sans-serif" font-size="12" fill="#6b7280" text-anchor="middle" font-weight="400">Cumulative</text>
+<rect x="333.5" y="124.5" width="44.0" height="181.5" rx="3.0" fill="#2563eb"/>
+<text x="355.5" y="118.5" font-family="Inter, Arial, sans-serif" font-size="11" fill="#6b7280" text-anchor="middle" font-weight="400">1.08</text>
+<text x="894.5" y="326.0" font-family="Inter, Arial, sans-serif" font-size="12" fill="#6b7280" text-anchor="middle" font-weight="400">Window</text>
+<rect x="872.5" y="301.0" width="44.0" height="5.0" rx="3.0" fill="#2563eb"/>
+<text x="894.5" y="295.0" font-family="Inter, Arial, sans-serif" font-size="11" fill="#6b7280" text-anchor="middle" font-weight="400">0.03</text>
+<rect x="366.0" y="83.0" width="14.0" height="10.0" rx="2.0" fill="#2563eb"/>
+<text x="388.0" y="94.0" font-family="Inter, Arial, sans-serif" font-size="12" fill="#6b7280" text-anchor="start" font-weight="400">throughput</text>
+<text x="86.0" y="398.0" font-family="Inter, Arial, sans-serif" font-size="15" fill="#111827" text-anchor="start" font-weight="700">Output Throughput</text>
+<text x="24.0" y="402.0" font-family="Inter, Arial, sans-serif" font-size="12" fill="#6b7280" text-anchor="start" font-weight="400">tokens / sec</text>
+<line x1="86.0" y1="610.0" x2="1164.0" y2="610.0" stroke="#e5e7eb" stroke-width="1.0"/>
+<text x="76.0" y="614.0" font-family="Inter, Arial, sans-serif" font-size="11" fill="#6b7280" text-anchor="end" font-weight="400">0</text>
+<line x1="86.0" y1="561.0" x2="1164.0" y2="561.0" stroke="#e5e7eb" stroke-width="1.0"/>
+<text x="76.0" y="565.0" font-family="Inter, Arial, sans-serif" font-size="11" fill="#6b7280" text-anchor="end" font-weight="400">62.13</text>
+<line x1="86.0" y1="512.0" x2="1164.0" y2="512.0" stroke="#e5e7eb" stroke-width="1.0"/>
+<text x="76.0" y="516.0" font-family="Inter, Arial, sans-serif" font-size="11" fill="#6b7280" text-anchor="end" font-weight="400">124.3</text>
+<line x1="86.0" y1="463.0" x2="1164.0" y2="463.0" stroke="#e5e7eb" stroke-width="1.0"/>
+<text x="76.0" y="467.0" font-family="Inter, Arial, sans-serif" font-size="11" fill="#6b7280" text-anchor="end" font-weight="400">186.4</text>
+<line x1="86.0" y1="414.0" x2="1164.0" y2="414.0" stroke="#e5e7eb" stroke-width="1.0"/>
+<text x="76.0" y="418.0" font-family="Inter, Arial, sans-serif" font-size="11" fill="#6b7280" text-anchor="end" font-weight="400">248.5</text>
+<line x1="86.0" y1="610.0" x2="1164.0" y2="610.0" stroke="#9ca3af" stroke-width="1.2"/>
+<line x1="86.0" y1="414.0" x2="86.0" y2="610.0" stroke="#9ca3af" stroke-width="1.2"/>
+<text x="355.5" y="630.0" font-family="Inter, Arial, sans-serif" font-size="12" fill="#6b7280" text-anchor="middle" font-weight="400">Cumulative</text>
+<rect x="333.5" y="428.5" width="44.0" height="181.5" rx="3.0" fill="#059669"/>
+<text x="355.5" y="422.5" font-family="Inter, Arial, sans-serif" font-size="11" fill="#6b7280" text-anchor="middle" font-weight="400">230.1</text>
+<text x="894.5" y="630.0" font-family="Inter, Arial, sans-serif" font-size="12" fill="#6b7280" text-anchor="middle" font-weight="400">Window</text>
+<rect x="872.5" y="605.1" width="44.0" height="4.9" rx="3.0" fill="#059669"/>
+<text x="894.5" y="599.1" font-family="Inter, Arial, sans-serif" font-size="11" fill="#6b7280" text-anchor="middle" font-weight="400">6.2</text>
+<rect x="366.0" y="387.0" width="14.0" height="10.0" rx="2.0" fill="#059669"/>
+<text x="388.0" y="398.0" font-family="Inter, Arial, sans-serif" font-size="12" fill="#6b7280" text-anchor="start" font-weight="400">throughput</text>
+<text x="86.0" y="702.0" font-family="Inter, Arial, sans-serif" font-size="15" fill="#111827" text-anchor="start" font-weight="700">Cache Hit Rate</text>
+<text x="24.0" y="706.0" font-family="Inter, Arial, sans-serif" font-size="12" fill="#6b7280" text-anchor="start" font-weight="400">percent</text>
+<line x1="86.0" y1="914.0" x2="1164.0" y2="914.0" stroke="#e5e7eb" stroke-width="1.0"/>
+<text x="76.0" y="918.0" font-family="Inter, Arial, sans-serif" font-size="11" fill="#6b7280" text-anchor="end" font-weight="400">0</text>
+<line x1="86.0" y1="865.0" x2="1164.0" y2="865.0" stroke="#e5e7eb" stroke-width="1.0"/>
+<text x="76.0" y="869.0" font-family="Inter, Arial, sans-serif" font-size="11" fill="#6b7280" text-anchor="end" font-weight="400">26.86</text>
+<line x1="86.0" y1="816.0" x2="1164.0" y2="816.0" stroke="#e5e7eb" stroke-width="1.0"/>
+<text x="76.0" y="820.0" font-family="Inter, Arial, sans-serif" font-size="11" fill="#6b7280" text-anchor="end" font-weight="400">53.73</text>
+<line x1="86.0" y1="767.0" x2="1164.0" y2="767.0" stroke="#e5e7eb" stroke-width="1.0"/>
+<text x="76.0" y="771.0" font-family="Inter, Arial, sans-serif" font-size="11" fill="#6b7280" text-anchor="end" font-weight="400">80.59</text>
+<line x1="86.0" y1="718.0" x2="1164.0" y2="718.0" stroke="#e5e7eb" stroke-width="1.0"/>
+<text x="76.0" y="722.0" font-family="Inter, Arial, sans-serif" font-size="11" fill="#6b7280" text-anchor="end" font-weight="400">107.5</text>
+<line x1="86.0" y1="914.0" x2="1164.0" y2="914.0" stroke="#9ca3af" stroke-width="1.2"/>
+<line x1="86.0" y1="718.0" x2="86.0" y2="914.0" stroke="#9ca3af" stroke-width="1.2"/>
+<text x="355.5" y="934.0" font-family="Inter, Arial, sans-serif" font-size="12" fill="#6b7280" text-anchor="middle" font-weight="400">Cumulative</text>
+<rect x="333.5" y="820.0" width="44.0" height="94.0" rx="3.0" fill="#d97706"/>
+<text x="355.5" y="814.0" font-family="Inter, Arial, sans-serif" font-size="11" fill="#6b7280" text-anchor="middle" font-weight="400">51.56</text>
+<text x="894.5" y="934.0" font-family="Inter, Arial, sans-serif" font-size="12" fill="#6b7280" text-anchor="middle" font-weight="400">Window</text>
+<rect x="872.5" y="732.5" width="44.0" height="181.5" rx="3.0" fill="#d97706"/>
+<text x="894.5" y="726.5" font-family="Inter, Arial, sans-serif" font-size="11" fill="#6b7280" text-anchor="middle" font-weight="400">99.5</text>
+<rect x="366.0" y="691.0" width="14.0" height="10.0" rx="2.0" fill="#d97706"/>
+<text x="388.0" y="702.0" font-family="Inter, Arial, sans-serif" font-size="12" fill="#6b7280" text-anchor="start" font-weight="400">hit rate</text>
+</svg>

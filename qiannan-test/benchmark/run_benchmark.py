@@ -231,10 +231,21 @@ def proxy_command(case: dict[str, Any], run_dir: Path) -> list[str]:
     append_pair(cmd, "--session-idle-timeout", proxy.get("session_idle_timeout"))
     if proxy.get("dynamic_admission"):
         cmd.append("--dynamic-admission")
+    append_pair(cmd, "--dynamic-min-active-sessions", proxy.get("dynamic_min_active_sessions"))
+    append_pair(cmd, "--dynamic-initial-active-sessions", proxy.get("dynamic_initial_active_sessions"))
+    append_pair(cmd, "--dynamic-max-active-sessions", proxy.get("dynamic_max_active_sessions"))
     append_pair(cmd, "--dynamic-min-inflight-requests", proxy.get("dynamic_min_inflight_requests"))
     append_pair(cmd, "--dynamic-initial-inflight-requests", proxy.get("dynamic_initial_inflight_requests"))
     append_pair(cmd, "--dynamic-max-inflight-requests", proxy.get("dynamic_max_inflight_requests"))
     append_pair(cmd, "--dynamic-control-interval", proxy.get("dynamic_control_interval"))
+    append_pair(cmd, "--dynamic-cache-hit-threshold", proxy.get("dynamic_cache_hit_threshold"))
+    append_pair(cmd, "--dynamic-low-kv-usage", proxy.get("dynamic_low_kv_usage"))
+    append_pair(cmd, "--dynamic-high-kv-usage", proxy.get("dynamic_high_kv_usage"))
+    append_pair(cmd, "--dynamic-additive-step", proxy.get("dynamic_additive_step"))
+    append_pair(cmd, "--dynamic-decrease-factor", proxy.get("dynamic_decrease_factor"))
+    append_pair(cmd, "--session-pause-min-secs", proxy.get("session_pause_min_secs"))
+    append_pair(cmd, "--server-metrics-url", proxy.get("server_metrics_url"))
+    append_pair(cmd, "--server-metrics-interval", proxy.get("server_metrics_interval"))
     return cmd
 
 
